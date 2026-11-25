@@ -1,0 +1,10 @@
+[Desktop Entry]
+Type=Application
+Name=Ledger MRU
+GenericName=Comptabilité personnelle
+Comment=Comptabilité personnelle en ouguiya (partie double)
+Exec=ledger-desktop
+Icon=app.mru.ledger
+Terminal=false
+Categories=Office;Finance;
+StartupWMClass=app.mru.ledger

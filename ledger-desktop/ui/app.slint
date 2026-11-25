@@ -1,0 +1,2017 @@
+// Ledger MRU — desktop UI. All data comes from Rust through the `Store` global.
+
+import { ScrollView, LineEdit, ComboBox, Palette } from "std-widgets.slint";
+import { P, Icons, Icon, Heading, Muted, Caps, Card, PillButton, LinkButton, Tag, Chip, Segmented, Bar, FieldLabel } from "theme.slint";
+
+export { P } from "theme.slint";
+export { Palette } from "std-widgets.slint";
+
+export struct Opt { id: string, name: string }
+export struct Pair { name: string, value: string }
+export struct CatBar { name: string, amount: string, frac: float }
+export struct LineRow { name: string, dr: string, cr: string, credit: bool }
+export struct EntryRow {
+    id: string,
+    title: string,
+    sub: string,
+    memo: string,
+    day: string,
+    day-long: string,
+    initial: string,
+    amount: string,
+    kind: int, // 0 expense · 1 income · 2 transfer
+    lines: [LineRow],
+}
+export struct DayGroup { label: string, items: [EntryRow] }
+export struct LedgerRow { memo: string, date: string, dr: string, cr: string, bal: string }
+export struct TbRow { name: string, kind: string, dr: string, cr: string }
+export struct MonthRow {
+    label: string,
+    long: string,
+    inc: string,
+    exp: string,
+    net: string,
+    negative: bool,
+    hi: float,
+    he: float,
+    current: bool,
+}
+export struct BudgetRow {
+    id: string,
+    name: string,
+    spent: string,
+    budget: string,
+    frac: float,
+    status: string,
+    level: int, // 0 fine · 1 close to limit · 2 over
+}
+export struct AcctRow { id: string, name: string, meta: string, bal: string }
+export struct AcctGroup { label: string, hint: string, items: [AcctRow] }
+
+export global Store {
+    // navigation & settings
+    in-out property <int> tab; // 0 home · 1 journal · 2 ledger · 3 reports · 4 accounts
+    in-out property <int> report; // 0 trial balance · 1 monthly · 2 budgets
+    in property <string> month-label;
+    in property <string> month-long;
+    in property <bool> pro;
+    in property <bool> hints: true;
+    in property <bool> khoums;
+    in property <int> theme; // 0 system · 1 light · 2 dark
+
+    // home
+    in property <string> kept-caps;
+    in property <string> net;
+    in property <string> rate;
+    in property <string> inc;
+    in property <string> exp;
+    in property <string> assets-total;
+    in property <[CatBar]> cats;
+    in property <[Pair]> assets;
+    in property <[EntryRow]> recent;
+
+    // journal
+    in property <[DayGroup]> groups;
+    in property <string> j-dr;
+    in property <string> j-cr;
+    in property <bool> j-balanced;
+
+    // ledger
+    in property <[Opt]> ledger-accounts;
+    in property <string> ledger-sel;
+    in property <string> l-name;
+    in property <string> l-type;
+    in property <string> l-hint;
+    in property <string> l-open;
+    in property <string> l-close;
+    in property <[LedgerRow]> l-rows;
+    in property <string> l-tot-dr;
+    in property <string> l-tot-cr;
+
+    // reports
+    in property <[TbRow]> tb-rows;
+    in property <string> tb-dr;
+    in property <string> tb-cr;
+    in property <bool> tb-balanced;
+    in property <string> tb-asat;
+    in property <[MonthRow]> mom-rows;
+    in property <string> mom-summary;
+    in property <[BudgetRow]> bud-rows;
+    in property <string> bud-spent;
+    in property <string> bud-total;
+    in property <float> bud-frac;
+
+    // accounts
+    in property <[AcctGroup]> acct-groups;
+    in property <string> data-path;
+    in-out property <string> io-path;
+    in-out property <bool> confirm-reset;
+    in property <int> demo-count;
+    in property <bool> only-demo; // nothing but demo entries in the book
+    in property <string> empty-label;
+    in property <string> empty-text;
+    in-out property <bool> confirm-empty;
+    in-out property <bool> demo-seen; // first-launch card dismissed
+
+    // overlays: 0 none · 1 new entry · 2 entry detail · 3 account editor
+    in-out property <int> overlay;
+
+    // new-entry form
+    in property <int> f-kind;
+    in property <[Opt]> f-cats;
+    in property <string> f-cat;
+    in property <[string]> via-names;
+    in-out property <int> via-index;
+    in property <[string]> all-names;
+    in-out property <int> dr-index;
+    in-out property <int> cr-index;
+    in-out property <string> f-amount;
+    in-out property <string> f-date;
+    in-out property <string> f-memo;
+    in property <string> p-dr;
+    in property <string> p-cr;
+    in property <string> p-amt;
+    in property <string> f-error;
+
+    // entry detail
+    in property <EntryRow> cur;
+
+    // account editor
+    in property <bool> af-editing;
+    in-out property <string> af-name;
+    in-out property <int> af-type;
+    in-out property <string> af-budget;
+    in property <string> af-error;
+
+    // stays until dismissed (e.g. the ledger file could not be read)
+    in-out property <string> notice;
+
+    // toast
+    in property <string> toast;
+    in property <bool> toast-undo;
+
+    callback prev-month();
+    callback next-month();
+    callback this-month();
+    callback pick-ledger(string);
+    callback set-mode(bool);
+    callback set-hints(bool);
+    callback set-khoums(bool);
+    callback set-theme(int);
+    callback open-add();
+    callback set-kind(int);
+    callback pick-cat(string);
+    callback form-edited();
+    callback save-entry();
+    callback close-overlay();
+    callback open-entry(string);
+    callback delete-entry();
+    callback undo();
+    callback open-account(string);
+    callback save-account();
+    callback delete-account();
+    callback reset-demo();
+    callback start-empty();
+    callback export-json();
+    callback import-json(bool); // true = merge, false = replace
+
+    // folder sync (Syncthing)
+    in property <bool> sync-on;
+    in-out property <string> sync-path;
+    in property <string> sync-status;
+    in property <string> sync-device;
+    in property <bool> sync-choice;
+    in property <string> sync-choice-text;
+    callback sync-connect();
+    callback sync-choose(int); // 0 cancel · 1 merge · 2 use the folder's data
+    callback sync-now();
+    callback sync-disconnect();
+}
+
+// ───────────────────────── building blocks ─────────────────────────
+
+component T inherits Text {
+    color: P.text;
+    font-size: 14px;
+    vertical-alignment: center;
+}
+
+component Num inherits T {
+    font-size: 13px;
+    horizontal-alignment: right;
+}
+
+component RoundIcon inherits Rectangle {
+    in property <string> icon;
+    callback clicked;
+    width: 36px;
+    height: 36px;
+    border-radius: 18px;
+    background: ta.has-hover ? P.n300 : transparent;
+    Icon {
+        icon: root.icon;
+        width: 18px;
+        height: 18px;
+    }
+    ta := TouchArea {
+        mouse-cursor: pointer;
+        clicked => { root.clicked(); }
+    }
+}
+
+component MonthSwitcher inherits Rectangle {
+    width: 230px;
+    height: 44px;
+    border-radius: 22px;
+    background: P.surface;
+    HorizontalLayout {
+        padding: 4px;
+        RoundIcon {
+            icon: Icons.left;
+            clicked => { Store.prev-month(); }
+        }
+        Rectangle {
+            horizontal-stretch: 1;
+            T {
+                text: Store.month-label;
+                font-weight: 700;
+            }
+            TouchArea {
+                mouse-cursor: pointer;
+                clicked => { Store.this-month(); }
+            }
+        }
+        RoundIcon {
+            icon: Icons.right;
+            clicked => { Store.next-month(); }
+        }
+    }
+}
+
+component NavItem inherits Rectangle {
+    in property <string> icon;
+    in property <string> label;
+    in property <bool> active;
+    callback clicked;
+    height: 44px;
+    border-radius: 22px;
+    background: root.active ? P.a300 : ta.has-hover ? P.hover : transparent;
+    HorizontalLayout {
+        padding-left: 16px;
+        spacing: 12px;
+        alignment: start;
+        Rectangle {
+            width: 20px;
+            Icon {
+                icon: root.icon;
+                tint: root.active ? P.a900 : P.n700;
+            }
+        }
+        T {
+            text: root.label;
+            font-weight: 600;
+            color: root.active ? P.a900 : P.n700;
+        }
+    }
+    ta := TouchArea {
+        mouse-cursor: pointer;
+        clicked => { root.clicked(); }
+    }
+}
+
+/// A table row with a top rule (thin, or thick for totals).
+component TRow inherits Rectangle {
+    in property <bool> strong;
+    min-height: 40px;
+    Rectangle {
+        x: 0;
+        y: 0;
+        width: parent.width;
+        height: root.strong ? 2px : 1px;
+        background: root.strong ? P.text : P.divider;
+    }
+    @children
+}
+
+component EntryItem inherits Rectangle {
+    in property <EntryRow> e;
+    border-radius: 18px;
+    background: ta.has-hover ? P.n200 : transparent;
+    ta := TouchArea {
+        mouse-cursor: pointer;
+        clicked => { Store.open-entry(root.e.id); }
+    }
+    HorizontalLayout {
+        padding: 10px;
+        padding-left: 12px;
+        padding-right: 14px;
+        spacing: 12px;
+        Rectangle {
+            width: 38px;
+            height: 38px;
+            border-radius: 19px;
+            background: root.e.kind == 0 ? P.a200 : root.e.kind == 1 ? P.g200 : P.n200;
+            T {
+                text: root.e.initial;
+                font-weight: 700;
+                color: root.e.kind == 0 ? P.a700 : root.e.kind == 1 ? P.g700 : P.n700;
+            }
+        }
+        VerticalLayout {
+            horizontal-stretch: 1;
+            alignment: center;
+            T {
+                text: root.e.title;
+                font-weight: 600;
+                overflow: elide;
+            }
+            Muted {
+                text: root.e.day + " · " + root.e.sub;
+                overflow: elide;
+            }
+        }
+        T {
+            text: root.e.amount;
+            font-weight: 700;
+            color: root.e.kind == 0 ? P.a700 : root.e.kind == 1 ? P.g700 : P.n700;
+        }
+    }
+}
+
+/// Journal lines: debit first, credits indented with "to …".
+component Lines inherits VerticalLayout {
+    in property <[LineRow]> lines;
+    in property <length> num-width: 100px;
+    in property <bool> bold;
+    for l in root.lines: HorizontalLayout {
+        spacing: 6px;
+        HorizontalLayout {
+            horizontal-stretch: 1;
+            padding-left: l.credit ? 18px : 0px;
+            T {
+                text: (l.credit ? "to " : "") + l.name;
+                font-size: 13px;
+                font-weight: root.bold ? 600 : 400;
+                color: root.bold ? P.text : P.n800;
+            }
+        }
+        Num {
+            text: l.dr;
+            width: root.num-width;
+        }
+        Num {
+            text: l.cr;
+            width: root.num-width;
+            color: P.n700;
+        }
+    }
+}
+
+component Tile inherits Rectangle {
+    in property <string> label;
+    in property <string> icon;
+    in property <string> value;
+    in property <color> fg;
+    in property <color> strong;
+    border-radius: 24px;
+    VerticalLayout {
+        padding: 18px;
+        spacing: 6px;
+        HorizontalLayout {
+            spacing: 6px;
+            alignment: start;
+            Rectangle {
+                width: 16px;
+                Icon {
+                    icon: root.icon;
+                    tint: root.fg;
+                    width: 16px;
+                    height: 16px;
+                }
+            }
+            T {
+                text: root.label;
+                font-size: 13px;
+                font-weight: 600;
+                color: root.fg;
+            }
+        }
+        Heading {
+            text: root.value;
+            font-size: 28px;
+            color: root.strong;
+        }
+    }
+}
+
+// ───────────────────────── views ─────────────────────────
+
+component HomeView inherits HorizontalLayout {
+    spacing: 18px;
+    VerticalLayout {
+        horizontal-stretch: 3;
+        spacing: 16px;
+        alignment: start;
+        // hero
+        Rectangle {
+            background: P.hero-bg;
+            border-radius: 32px;
+            clip: true;
+            Rectangle {
+                x: parent.width - 120px;
+                y: -50px;
+                width: 170px;
+                height: 170px;
+                border-radius: 85px;
+                background: P.hero-circle;
+            }
+            VerticalLayout {
+                padding: 26px;
+                spacing: 6px;
+                Caps {
+                    text: Store.kept-caps;
+                    font-size: 12px;
+                    color: P.hero-caps;
+                }
+                HorizontalLayout {
+                    spacing: 10px;
+                    alignment: start;
+                    Heading {
+                        text: Store.net;
+                        font-size: 54px;
+                        color: P.hero-text;
+                    }
+                    T {
+                        text: "MRU";
+                        font-size: 16px;
+                        font-weight: 600;
+                        color: P.hero-caps;
+                        vertical-alignment: bottom;
+                    }
+                }
+                T {
+                    text: Store.rate;
+                    color: P.hero-sub;
+                }
+            }
+        }
+        HorizontalLayout {
+            spacing: 14px;
+            Tile {
+                label: "Income";
+                icon: Icons.arrow-in;
+                value: Store.inc;
+                background: P.g200;
+                fg: P.g800;
+                strong: P.g900;
+            }
+            Tile {
+                label: "Outcome";
+                icon: Icons.arrow-out;
+                value: Store.exp;
+                background: P.a200;
+                fg: P.a800;
+                strong: P.a900;
+            }
+        }
+        Card {
+            VerticalLayout {
+                padding: 22px;
+                spacing: 10px;
+                HorizontalLayout {
+                    Heading {
+                        text: "Where it went";
+                        font-size: 19px;
+                        horizontal-stretch: 1;
+                    }
+                    LinkButton {
+                        text: "Budgets";
+                        clicked => {
+                            Store.report = 2;
+                            Store.tab = 3;
+                        }
+                    }
+                }
+                for c[i] in Store.cats: VerticalLayout {
+                    spacing: 6px;
+                    padding-bottom: 4px;
+                    HorizontalLayout {
+                        T {
+                            text: c.name;
+                            font-size: 13px;
+                            font-weight: 600;
+                            horizontal-stretch: 1;
+                        }
+                        Num {
+                            text: c.amount;
+                            color: P.n700;
+                        }
+                    }
+                    Bar {
+                        frac: max(0.04, c.frac);
+                        fill: P.pal[mod(i, 8)];
+                    }
+                }
+                if Store.cats.length == 0: Muted {
+                    text: "No spending recorded this month.";
+                    font-size: 13px;
+                }
+            }
+        }
+    }
+    VerticalLayout {
+        horizontal-stretch: 2;
+        spacing: 16px;
+        alignment: start;
+        Card {
+            VerticalLayout {
+                padding: 22px;
+                spacing: 12px;
+                HorizontalLayout {
+                    Heading {
+                        text: "Money I have";
+                        font-size: 19px;
+                        horizontal-stretch: 1;
+                    }
+                    T {
+                        text: Store.assets-total + " MRU";
+                        font-weight: 700;
+                    }
+                }
+                FlexboxLayout {
+                    spacing: 6px;
+                    for a in Store.assets: Rectangle {
+                        height: 30px;
+                        width: row.preferred-width + 24px;
+                        border-radius: 15px;
+                        background: P.n100;
+                        row := HorizontalLayout {
+                            spacing: 6px;
+                            alignment: center;
+                            T {
+                                text: a.name;
+                                font-size: 12px;
+                                color: P.n800;
+                            }
+                            T {
+                                text: a.value;
+                                font-size: 12px;
+                                font-weight: 700;
+                                color: P.n800;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        Card {
+            VerticalLayout {
+                padding: 12px;
+                padding-top: 18px;
+                spacing: 2px;
+                HorizontalLayout {
+                    padding-left: 10px;
+                    padding-bottom: 6px;
+                    Heading {
+                        text: "Latest";
+                        font-size: 19px;
+                        horizontal-stretch: 1;
+                    }
+                    LinkButton {
+                        text: "Journal";
+                        clicked => { Store.tab = 1; }
+                    }
+                }
+                for e in Store.recent: EntryItem {
+                    e: e;
+                }
+                if Store.recent.length == 0: Muted {
+                    text: "Nothing recorded this month yet.";
+                    font-size: 13px;
+                }
+            }
+        }
+    }
+}
+
+component JournalView inherits VerticalLayout {
+    spacing: 14px;
+    alignment: start;
+    if Store.pro: Rectangle {
+        height: 44px;
+        border-radius: 22px;
+        background: P.surface;
+        HorizontalLayout {
+            padding-left: 18px;
+            padding-right: 10px;
+            spacing: 8px;
+            T {
+                text: "Debits " + Store.j-dr + "  ·  Credits " + Store.j-cr;
+                font-size: 13px;
+                font-weight: 600;
+                horizontal-stretch: 1;
+            }
+            VerticalLayout {
+                alignment: center;
+                Tag {
+                    text: Store.j-balanced ? "Balanced" : "Check entries";
+                    tone: 2;
+                }
+            }
+        }
+    }
+    for g in Store.groups: VerticalLayout {
+        spacing: 6px;
+        Caps {
+            text: g.label;
+        }
+        Card {
+            VerticalLayout {
+                padding: 4px;
+                for e in g.items: Rectangle {
+                    border-radius: 20px;
+                    background: ja.has-hover ? P.n200 : transparent;
+                    ja := TouchArea {
+                        mouse-cursor: pointer;
+                        clicked => { Store.open-entry(e.id); }
+                    }
+                    // A layout (not the Rectangle) must hold the `if`s so the row gets a height.
+                    VerticalLayout {
+                        if !Store.pro: HorizontalLayout {
+                            padding: 12px;
+                            padding-left: 16px;
+                            spacing: 14px;
+                            VerticalLayout {
+                                alignment: center;
+                                Rectangle {
+                                    width: 10px;
+                                    height: 10px;
+                                    border-radius: 5px;
+                                    background: e.kind == 0 ? P.a500 : e.kind == 1 ? P.g600 : P.n500;
+                                }
+                            }
+                            VerticalLayout {
+                                horizontal-stretch: 1;
+                                T {
+                                    text: e.title;
+                                    font-weight: 600;
+                                }
+                                Muted { text: e.memo + " · " + e.sub; }
+                            }
+                            T {
+                                text: e.amount;
+                                font-weight: 700;
+                                color: e.kind == 0 ? P.a700 : e.kind == 1 ? P.g700 : P.n700;
+                            }
+                        }
+                        if Store.pro: VerticalLayout {
+                            padding: 12px;
+                            padding-left: 16px;
+                            spacing: 4px;
+                            T {
+                                text: e.memo;
+                                font-size: 13px;
+                                font-weight: 700;
+                            }
+                            Lines { lines: e.lines; }
+                        }
+                    }
+                }
+            }
+        }
+    }
+    if Store.groups.length == 0: VerticalLayout {
+        padding: 60px;
+        T {
+            text: "Nothing recorded in " + Store.month-long + ".\nClick “+ New entry” to add your first one.";
+            horizontal-alignment: center;
+            color: P.n700;
+        }
+    }
+}
+
+component LedgerView inherits VerticalLayout {
+    spacing: 16px;
+    alignment: start;
+    FlexboxLayout {
+        spacing: 6px;
+        for a in Store.ledger-accounts: Chip {
+            text: a.name;
+            selected: a.id == Store.ledger-sel;
+            clicked => { Store.pick-ledger(a.id); }
+        }
+    }
+    Card {
+        VerticalLayout {
+            padding: 22px;
+            spacing: 4px;
+            HorizontalLayout {
+                Heading {
+                    text: Store.l-name;
+                    font-size: 24px;
+                    horizontal-stretch: 1;
+                }
+                Tag {
+                    text: Store.l-type;
+                    tone: 1;
+                }
+            }
+            Muted { text: Store.l-hint; }
+            HorizontalLayout {
+                padding-top: 12px;
+                VerticalLayout {
+                    horizontal-stretch: 1;
+                    Muted {
+                        text: "Opening";
+                        font-size: 11px;
+                    }
+                    T {
+                        text: Store.l-open;
+                        font-size: 16px;
+                        font-weight: 700;
+                    }
+                }
+                VerticalLayout {
+                    horizontal-stretch: 1;
+                    Muted {
+                        text: "Closing";
+                        font-size: 11px;
+                    }
+                    Heading {
+                        text: Store.l-close;
+                        font-size: 24px;
+                    }
+                }
+            }
+        }
+    }
+    VerticalLayout {
+        HorizontalLayout {
+            padding: 6px;
+            Caps {
+                text: "ENTRY";
+                horizontal-stretch: 1;
+            }
+            Caps {
+                text: "DEBIT";
+                width: 110px;
+                horizontal-alignment: right;
+            }
+            Caps {
+                text: "CREDIT";
+                width: 110px;
+                horizontal-alignment: right;
+            }
+            Caps {
+                text: "BALANCE";
+                width: 120px;
+                horizontal-alignment: right;
+            }
+        }
+        for r in Store.l-rows: TRow {
+            HorizontalLayout {
+                padding: 8px;
+                padding-left: 6px;
+                padding-right: 6px;
+                VerticalLayout {
+                    horizontal-stretch: 1;
+                    T {
+                        text: r.memo;
+                        font-size: 13px;
+                        font-weight: 600;
+                        overflow: elide;
+                    }
+                    Muted {
+                        text: r.date;
+                        font-size: 11px;
+                    }
+                }
+                Num {
+                    text: r.dr;
+                    width: 110px;
+                }
+                Num {
+                    text: r.cr;
+                    width: 110px;
+                }
+                Num {
+                    text: r.bal;
+                    width: 120px;
+                    font-weight: 700;
+                }
+            }
+        }
+        TRow {
+            strong: true;
+            HorizontalLayout {
+                padding: 10px;
+                padding-left: 6px;
+                padding-right: 6px;
+                T {
+                    text: "Month total";
+                    font-size: 13px;
+                    font-weight: 700;
+                    horizontal-stretch: 1;
+                }
+                Num {
+                    text: Store.l-tot-dr;
+                    width: 110px;
+                    font-weight: 700;
+                }
+                Num {
+                    text: Store.l-tot-cr;
+                    width: 110px;
+                    font-weight: 700;
+                }
+                Rectangle { width: 120px; }
+            }
+        }
+        if Store.l-rows.length == 0: Muted {
+            text: "No movement on this account in " + Store.month-long + ".";
+            font-size: 13px;
+            height: 40px;
+        }
+    }
+}
+
+component TrialBalance inherits VerticalLayout {
+    spacing: 10px;
+    HorizontalLayout {
+        padding-left: 4px;
+        Muted {
+            text: "Balances as at " + Store.tb-asat;
+            horizontal-stretch: 1;
+        }
+        Tag {
+            text: Store.tb-balanced ? "Balanced" : "Out of balance";
+            tone: 2;
+        }
+    }
+    Card {
+        VerticalLayout {
+            padding: 14px;
+            padding-left: 18px;
+            padding-right: 18px;
+            HorizontalLayout {
+                padding-bottom: 8px;
+                Caps {
+                    text: "ACCOUNT";
+                    horizontal-stretch: 1;
+                }
+                Caps {
+                    text: "DEBIT";
+                    width: 130px;
+                    horizontal-alignment: right;
+                }
+                Caps {
+                    text: "CREDIT";
+                    width: 130px;
+                    horizontal-alignment: right;
+                }
+            }
+            for r in Store.tb-rows: TRow {
+                HorizontalLayout {
+                    padding-top: 7px;
+                    padding-bottom: 7px;
+                    VerticalLayout {
+                        horizontal-stretch: 1;
+                        T {
+                            text: r.name;
+                            font-size: 13px;
+                            font-weight: 600;
+                        }
+                        Muted {
+                            text: r.kind;
+                            font-size: 11px;
+                        }
+                    }
+                    Num {
+                        text: r.dr;
+                        width: 130px;
+                    }
+                    Num {
+                        text: r.cr;
+                        width: 130px;
+                    }
+                }
+            }
+            TRow {
+                strong: true;
+                HorizontalLayout {
+                    T {
+                        text: "Total";
+                        font-weight: 700;
+                        horizontal-stretch: 1;
+                    }
+                    Num {
+                        text: Store.tb-dr;
+                        width: 130px;
+                        font-weight: 700;
+                    }
+                    Num {
+                        text: Store.tb-cr;
+                        width: 130px;
+                        font-weight: 700;
+                    }
+                }
+            }
+        }
+    }
+    if Store.hints: Muted {
+        text: "Every entry has equal debits and credits, so these two columns must match. If they don't, an entry was recorded wrong.";
+        wrap: word-wrap;
+    }
+}
+
+component Monthly inherits VerticalLayout {
+    spacing: 14px;
+    HorizontalLayout {
+        spacing: 16px;
+        Card {
+            horizontal-stretch: 1;
+            VerticalLayout {
+                padding: 20px;
+                spacing: 12px;
+                HorizontalLayout {
+                    spacing: 16px;
+                    alignment: start;
+                    HorizontalLayout {
+                        spacing: 6px;
+                        Rectangle {
+                            width: 10px;
+                            height: 10px;
+                            border-radius: 5px;
+                            background: P.g500;
+                        }
+                        T {
+                            text: "Income";
+                            font-size: 12px;
+                        }
+                    }
+                    HorizontalLayout {
+                        spacing: 6px;
+                        Rectangle {
+                            width: 10px;
+                            height: 10px;
+                            border-radius: 5px;
+                            background: P.a500;
+                        }
+                        T {
+                            text: "Outcome";
+                            font-size: 12px;
+                        }
+                    }
+                }
+                HorizontalLayout {
+                    height: 180px;
+                    spacing: 6px;
+                    for m in Store.mom-rows: Rectangle {
+                        Rectangle {
+                            x: parent.width / 2 - 19px;
+                            y: parent.height - self.height;
+                            width: 16px;
+                            height: m.hi > 0 ? max(4px, parent.height * m.hi) : 0px;
+                            border-radius: 8px;
+                            background: P.g500;
+                        }
+                        Rectangle {
+                            x: parent.width / 2 + 3px;
+                            y: parent.height - self.height;
+                            width: 16px;
+                            height: m.he > 0 ? max(4px, parent.height * m.he) : 0px;
+                            border-radius: 8px;
+                            background: P.a500;
+                        }
+                    }
+                }
+                HorizontalLayout {
+                    spacing: 6px;
+                    for m in Store.mom-rows: T {
+                        text: m.label;
+                        font-size: 12px;
+                        font-weight: m.current ? 800 : 500;
+                        horizontal-alignment: center;
+                    }
+                }
+            }
+        }
+        VerticalLayout {
+            horizontal-stretch: 1;
+            HorizontalLayout {
+                padding: 6px;
+                Caps {
+                    text: "MONTH";
+                    horizontal-stretch: 1;
+                }
+                Caps {
+                    text: "IN";
+                    width: 90px;
+                    horizontal-alignment: right;
+                }
+                Caps {
+                    text: "OUT";
+                    width: 90px;
+                    horizontal-alignment: right;
+                }
+                Caps {
+                    text: "KEPT";
+                    width: 90px;
+                    horizontal-alignment: right;
+                }
+            }
+            for m in Store.mom-rows: TRow {
+                HorizontalLayout {
+                    padding-left: 6px;
+                    padding-right: 6px;
+                    T {
+                        text: m.long;
+                        font-size: 13px;
+                        font-weight: m.current ? 800 : 500;
+                        horizontal-stretch: 1;
+                    }
+                    Num {
+                        text: m.inc;
+                        width: 90px;
+                    }
+                    Num {
+                        text: m.exp;
+                        width: 90px;
+                    }
+                    Num {
+                        text: m.net;
+                        width: 90px;
+                        font-weight: 700;
+                        color: m.negative ? P.a700 : P.g700;
+                    }
+                }
+            }
+        }
+    }
+    Rectangle {
+        background: P.g200;
+        border-radius: 22px;
+        VerticalLayout {
+            padding: 16px;
+            padding-left: 20px;
+            T {
+                text: Store.mom-summary;
+                font-size: 13px;
+                color: P.g900;
+                wrap: word-wrap;
+            }
+        }
+    }
+}
+
+component Budgets inherits VerticalLayout {
+    spacing: 10px;
+    Card {
+        VerticalLayout {
+            padding: 20px;
+            spacing: 8px;
+            Muted { text: "Spent of budget · " + Store.month-long; }
+            HorizontalLayout {
+                spacing: 8px;
+                alignment: start;
+                Heading {
+                    text: Store.bud-spent;
+                    font-size: 30px;
+                }
+                T {
+                    text: "/ " + Store.bud-total + " MRU";
+                    color: P.n700;
+                    vertical-alignment: bottom;
+                }
+            }
+            Bar {
+                frac: Store.bud-frac;
+                fill: P.g600;
+                height: 10px;
+            }
+        }
+    }
+    for b in Store.bud-rows: Rectangle {
+        border-radius: 18px;
+        background: ba.has-hover ? P.surface : transparent;
+        ba := TouchArea {
+            mouse-cursor: pointer;
+            clicked => { Store.open-account(b.id); }
+        }
+        VerticalLayout {
+            padding: 12px;
+            spacing: 6px;
+            HorizontalLayout {
+                T {
+                    text: b.name;
+                    font-weight: 600;
+                    horizontal-stretch: 1;
+                }
+                T {
+                    text: b.spent + " / " + b.budget;
+                    font-size: 13px;
+                }
+            }
+            Bar {
+                frac: b.frac;
+                fill: b.level == 2 ? P.a600 : b.level == 1 ? P.a400 : P.g500;
+            }
+            T {
+                text: b.status;
+                font-size: 12px;
+                font-weight: 600;
+                color: b.level == 0 ? P.g700 : P.a700;
+            }
+        }
+    }
+    if Store.bud-rows.length == 0: Muted { text: "No budgets yet. Set a monthly budget on an expense account in Accounts."; }
+    if Store.hints && Store.bud-rows.length > 0: Muted {
+        text: "Click a category to change its monthly budget.";
+    }
+}
+
+component ReportsView inherits VerticalLayout {
+    spacing: 16px;
+    alignment: start;
+    HorizontalLayout {
+        alignment: start;
+        Segmented {
+            width: 460px;
+            options: ["Trial balance", "Monthly", "Budgets"];
+            index: Store.report;
+            select(i) => { Store.report = i; }
+        }
+    }
+    if Store.report == 0: TrialBalance { }
+    if Store.report == 1: Monthly { }
+    if Store.report == 2: Budgets { }
+}
+
+component Toggle inherits Rectangle {
+    in property <bool> checked;
+    callback toggled(bool);
+    width: 44px;
+    height: 24px;
+    border-radius: 12px;
+    background: root.checked ? P.accent : P.n300;
+    animate background { duration: 120ms; }
+    Rectangle {
+        x: root.checked ? parent.width - self.width - 3px : 3px;
+        y: 3px;
+        width: 18px;
+        height: 18px;
+        border-radius: 9px;
+        background: root.checked ? P.bg : P.n600;
+        animate x { duration: 120ms; }
+    }
+    TouchArea {
+        mouse-cursor: pointer;
+        clicked => { root.toggled(!root.checked); }
+    }
+}
+
+component ToggleRow inherits HorizontalLayout {
+    in property <string> title;
+    in property <string> sub;
+    in property <bool> checked;
+    callback toggled(bool);
+    spacing: 12px;
+    padding-top: 6px;
+    padding-bottom: 6px;
+    VerticalLayout {
+        horizontal-stretch: 1;
+        T {
+            text: root.title;
+            font-weight: 600;
+        }
+        Muted { text: root.sub; }
+    }
+    VerticalLayout {
+        alignment: center;
+        Toggle {
+            checked: root.checked;
+            toggled(v) => { root.toggled(v); }
+        }
+    }
+}
+
+component AccountsView inherits HorizontalLayout {
+    spacing: 18px;
+    VerticalLayout {
+        horizontal-stretch: 2;
+        spacing: 16px;
+        alignment: start;
+        Card {
+            VerticalLayout {
+                padding: 22px;
+                spacing: 12px;
+                Heading {
+                    text: "Bookkeeping mode";
+                    font-size: 19px;
+                }
+                Segmented {
+                    options: ["Simple", "Accountant"];
+                    index: Store.pro ? 1 : 0;
+                    track: P.bg;
+                    sel: P.surface;
+                    select(i) => { Store.set-mode(i == 1); }
+                }
+                Muted {
+                    text: Store.pro
+                        ? "You choose the debit and credit account for every entry. Journal shows full Dr / Cr lines."
+                        : "Pick expense, income or transfer — the app writes the debit and credit for you. Switch any time; your data stays the same.";
+                    font-size: 13px;
+                    wrap: word-wrap;
+                }
+            }
+        }
+        Card {
+            VerticalLayout {
+                padding: 22px;
+                spacing: 12px;
+                Heading {
+                    text: "Appearance";
+                    font-size: 19px;
+                }
+                Segmented {
+                    options: ["System", "Light", "Dark"];
+                    index: Store.theme;
+                    track: P.bg;
+                    sel: P.surface;
+                    select(i) => { Store.set-theme(i); }
+                }
+            }
+        }
+        Card {
+            VerticalLayout {
+                padding: 22px;
+                padding-top: 14px;
+                padding-bottom: 14px;
+                ToggleRow {
+                    title: "Teaching hints";
+                    sub: "Explain debits, credits and budgets as you go";
+                    checked: Store.hints;
+                    toggled(v) => { Store.set-hints(v); }
+                }
+                ToggleRow {
+                    title: "Show khoums";
+                    sub: "Display amounts with two decimals";
+                    checked: Store.khoums;
+                    toggled(v) => { Store.set-khoums(v); }
+                }
+            }
+        }
+        Card {
+            VerticalLayout {
+                padding: 22px;
+                spacing: 10px;
+                Heading {
+                    text: "Data";
+                    font-size: 19px;
+                }
+                Muted {
+                    text: "Saved automatically in " + Store.data-path;
+                    wrap: word-wrap;
+                }
+                FieldLabel { text: "Exchange file — same format as the Android app"; }
+                Muted {
+                    text: "Merge keeps both sides (deletions included); Replace takes the file as is. Both can be undone.";
+                    wrap: word-wrap;
+                }
+                LineEdit { text <=> Store.io-path; }
+                HorizontalLayout {
+                    spacing: 10px;
+                    PillButton {
+                        text: "Export";
+                        font-size: 14px;
+                        clicked => { Store.export-json(); }
+                    }
+                    PillButton {
+                        text: "Merge";
+                        primary: true;
+                        font-size: 14px;
+                        clicked => { Store.import-json(true); }
+                    }
+                    PillButton {
+                        text: "Replace";
+                        font-size: 14px;
+                        clicked => { Store.import-json(false); }
+                    }
+                }
+                if Store.demo-count > 0 && !Store.confirm-empty: LinkButton {
+                    text: Store.empty-label;
+                    clicked => { Store.confirm-empty = true; }
+                }
+                if Store.demo-count > 0 && Store.confirm-empty: Rectangle {
+                    background: P.g100;
+                    border-radius: 18px;
+                    VerticalLayout {
+                        padding: 14px;
+                        spacing: 10px;
+                        T {
+                            text: Store.empty-text;
+                            font-size: 13px;
+                            wrap: word-wrap;
+                        }
+                        HorizontalLayout {
+                            spacing: 10px;
+                            PillButton {
+                                text: "Cancel";
+                                font-size: 14px;
+                                clicked => { Store.confirm-empty = false; }
+                            }
+                            PillButton {
+                                text: "Remove";
+                                primary: true;
+                                font-size: 14px;
+                                clicked => { Store.start-empty(); }
+                            }
+                        }
+                    }
+                }
+                if !Store.confirm-reset: LinkButton {
+                    text: "Reset to demo data";
+                    tint: P.n700;
+                    clicked => { Store.confirm-reset = true; }
+                }
+                if Store.confirm-reset: Rectangle {
+                    background: P.a100;
+                    border-radius: 18px;
+                    VerticalLayout {
+                        padding: 14px;
+                        spacing: 10px;
+                        T {
+                            text: "Replace all your accounts and entries with the sample household? This cannot be undone.";
+                            font-size: 13px;
+                            wrap: word-wrap;
+                        }
+                        HorizontalLayout {
+                            spacing: 10px;
+                            PillButton {
+                                text: "Cancel";
+                                font-size: 14px;
+                                clicked => { Store.confirm-reset = false; }
+                            }
+                            PillButton {
+                                text: "Reset";
+                                primary: true;
+                                font-size: 14px;
+                                clicked => { Store.reset-demo(); }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        Card {
+            VerticalLayout {
+                padding: 22px;
+                spacing: 10px;
+                HorizontalLayout {
+                    Heading {
+                        text: "Sync";
+                        font-size: 19px;
+                        horizontal-stretch: 1;
+                    }
+                    VerticalLayout {
+                        alignment: center;
+                        Tag {
+                            text: Store.sync-on ? "On" : "Off";
+                            tone: Store.sync-on ? 2 : 0;
+                        }
+                    }
+                }
+                Muted {
+                    text: "Use a folder that Syncthing shares with your phone. Each device keeps its own file there; changes merge on their own.";
+                    wrap: word-wrap;
+                }
+                if !Store.sync-on && !Store.sync-choice: VerticalLayout {
+                    spacing: 10px;
+                    FieldLabel { text: "Folder"; }
+                    LineEdit { text <=> Store.sync-path; }
+                    HorizontalLayout {
+                        alignment: start;
+                        PillButton {
+                            text: "Connect";
+                            primary: true;
+                            font-size: 14px;
+                            clicked => { Store.sync-connect(); }
+                        }
+                    }
+                }
+                if Store.sync-choice: Rectangle {
+                    background: P.a100;
+                    border-radius: 18px;
+                    VerticalLayout {
+                        padding: 14px;
+                        spacing: 10px;
+                        T {
+                            text: Store.sync-choice-text;
+                            font-size: 13px;
+                            wrap: word-wrap;
+                        }
+                        HorizontalLayout {
+                            spacing: 8px;
+                            PillButton {
+                                text: "Merge";
+                                primary: true;
+                                font-size: 13px;
+                                clicked => { Store.sync-choose(1); }
+                            }
+                            PillButton {
+                                text: "Use folder data";
+                                font-size: 13px;
+                                clicked => { Store.sync-choose(2); }
+                            }
+                            PillButton {
+                                text: "Cancel";
+                                font-size: 13px;
+                                clicked => { Store.sync-choose(0); }
+                            }
+                        }
+                    }
+                }
+                if Store.sync-on: VerticalLayout {
+                    spacing: 6px;
+                    T {
+                        text: Store.sync-status;
+                        font-weight: 600;
+                    }
+                    Muted {
+                        text: Store.sync-path + " · this computer: ledger-" + Store.sync-device + ".json";
+                        wrap: word-wrap;
+                    }
+                    HorizontalLayout {
+                        spacing: 10px;
+                        padding-top: 4px;
+                        alignment: start;
+                        PillButton {
+                            text: "Sync now";
+                            font-size: 14px;
+                            clicked => { Store.sync-now(); }
+                        }
+                        PillButton {
+                            text: "Disconnect";
+                            font-size: 14px;
+                            clicked => { Store.sync-disconnect(); }
+                        }
+                    }
+                }
+            }
+        }
+    }
+    VerticalLayout {
+        horizontal-stretch: 3;
+        spacing: 8px;
+        alignment: start;
+        for g in Store.acct-groups: VerticalLayout {
+            spacing: 6px;
+            padding-bottom: 10px;
+            HorizontalLayout {
+                spacing: 8px;
+                padding-left: 8px;
+                alignment: start;
+                Caps {
+                    text: g.label;
+                    color: P.text;
+                    font-weight: 700;
+                }
+                Muted {
+                    text: g.hint;
+                    font-size: 11px;
+                }
+            }
+            Card {
+                VerticalLayout {
+                    padding: 4px;
+                    for a in g.items: Rectangle {
+                        border-radius: 20px;
+                        background: aa.has-hover ? P.n200 : transparent;
+                        aa := TouchArea {
+                            mouse-cursor: pointer;
+                            clicked => { Store.open-account(a.id); }
+                        }
+                        HorizontalLayout {
+                            padding: 11px;
+                            padding-left: 14px;
+                            padding-right: 16px;
+                            VerticalLayout {
+                                horizontal-stretch: 1;
+                                T {
+                                    text: a.name;
+                                    font-weight: 600;
+                                }
+                                Muted {
+                                    text: a.meta;
+                                    font-size: 11.5px;
+                                }
+                            }
+                            T {
+                                text: a.bal;
+                                font-size: 13px;
+                                font-weight: 700;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        PillButton {
+            text: "+ New account";
+            clicked => { Store.open-account(""); }
+        }
+    }
+}
+
+// ───────────────────────── overlays ─────────────────────────
+
+component Drawer inherits Rectangle {
+    background: #2e2b2566;
+    TouchArea {
+        clicked => { Store.close-overlay(); }
+    }
+    Rectangle {
+        x: parent.width - self.width;
+        y: 0;
+        width: 470px;
+        height: parent.height;
+        background: P.bg;
+        drop-shadow-blur: 30px;
+        drop-shadow-color: #2e2b2540;
+        TouchArea { } // swallow clicks inside the panel
+        @children
+    }
+}
+
+component AddForm inherits VerticalLayout {
+    padding: 30px;
+    spacing: 14px;
+    HorizontalLayout {
+        Heading {
+            text: "New entry";
+            font-size: 26px;
+            horizontal-stretch: 1;
+        }
+        Tag { text: Store.pro ? "Accountant" : "Simple"; }
+    }
+    if !Store.pro: VerticalLayout {
+        spacing: 12px;
+        Segmented {
+            options: ["Expense", "Income", "Transfer"];
+            index: Store.f-kind;
+            select(i) => { Store.set-kind(i); }
+        }
+        FieldLabel { text: Store.f-kind == 0 ? "Category" : Store.f-kind == 1 ? "Source" : "Move to"; }
+        FlexboxLayout {
+            spacing: 6px;
+            for c in Store.f-cats: Chip {
+                text: c.name;
+                selected: c.id == Store.f-cat;
+                clicked => { Store.pick-cat(c.id); }
+            }
+        }
+        FieldLabel { text: Store.f-kind == 0 ? "Paid with" : Store.f-kind == 1 ? "Received in" : "Move from"; }
+        ComboBox {
+            model: Store.via-names;
+            current-index <=> Store.via-index;
+            selected => { Store.form-edited(); }
+        }
+    }
+    if Store.pro: HorizontalLayout {
+        spacing: 10px;
+        VerticalLayout {
+            spacing: 5px;
+            FieldLabel { text: "Debit (Dr)"; }
+            ComboBox {
+                model: Store.all-names;
+                current-index <=> Store.dr-index;
+                selected => { Store.form-edited(); }
+            }
+        }
+        VerticalLayout {
+            spacing: 5px;
+            FieldLabel { text: "Credit (Cr)"; }
+            ComboBox {
+                model: Store.all-names;
+                current-index <=> Store.cr-index;
+                selected => { Store.form-edited(); }
+            }
+        }
+    }
+    FieldLabel { text: "Amount (MRU)"; }
+    LineEdit {
+        text <=> Store.f-amount;
+        placeholder-text: "0";
+        font-size: 22px;
+        edited => { Store.form-edited(); }
+        accepted => { Store.save-entry(); }
+    }
+    HorizontalLayout {
+        spacing: 10px;
+        VerticalLayout {
+            width: 150px;
+            spacing: 5px;
+            FieldLabel { text: "Date (YYYY-MM-DD)"; }
+            LineEdit {
+                text <=> Store.f-date;
+                edited => { Store.form-edited(); }
+            }
+        }
+        VerticalLayout {
+            spacing: 5px;
+            FieldLabel { text: "Note"; }
+            LineEdit {
+                text <=> Store.f-memo;
+                placeholder-text: Store.f-kind == 1 ? "e.g. November salary" : "e.g. Weekly groceries";
+                accepted => { Store.save-entry(); }
+            }
+        }
+    }
+    if Store.hints: Card {
+        border-radius: 20px;
+        VerticalLayout {
+            padding: 14px;
+            padding-left: 18px;
+            padding-right: 18px;
+            spacing: 4px;
+            Caps {
+                text: "WILL BE RECORDED AS";
+                font-size: 10.5px;
+            }
+            HorizontalLayout {
+                T {
+                    text: "Dr " + Store.p-dr;
+                    font-size: 13px;
+                    horizontal-stretch: 1;
+                }
+                T {
+                    text: Store.p-amt;
+                    font-size: 13px;
+                    font-weight: 700;
+                }
+            }
+            HorizontalLayout {
+                padding-left: 18px;
+                T {
+                    text: "Cr " + Store.p-cr;
+                    font-size: 13px;
+                    color: P.n700;
+                    horizontal-stretch: 1;
+                }
+                T {
+                    text: Store.p-amt;
+                    font-size: 13px;
+                    font-weight: 700;
+                    color: P.n700;
+                }
+            }
+        }
+    }
+    if Store.f-error != "": T {
+        text: Store.f-error;
+        font-size: 13px;
+        font-weight: 600;
+        color: P.a700;
+    }
+    Rectangle { vertical-stretch: 1; }
+    HorizontalLayout {
+        spacing: 10px;
+        PillButton {
+            text: "Cancel";
+            horizontal-stretch: 1;
+            clicked => { Store.close-overlay(); }
+        }
+        PillButton {
+            text: "Save entry";
+            primary: true;
+            horizontal-stretch: 2;
+            clicked => { Store.save-entry(); }
+        }
+    }
+}
+
+component EntryDetail inherits VerticalLayout {
+    padding: 30px;
+    spacing: 14px;
+    VerticalLayout {
+        Heading {
+            text: Store.cur.memo;
+            font-size: 26px;
+            wrap: word-wrap;
+        }
+        Muted {
+            text: Store.cur.day-long;
+            font-size: 13px;
+        }
+    }
+    Card {
+        VerticalLayout {
+            padding: 16px;
+            padding-left: 18px;
+            padding-right: 18px;
+            spacing: 6px;
+            HorizontalLayout {
+                Caps {
+                    text: "ACCOUNT";
+                    horizontal-stretch: 1;
+                }
+                Caps {
+                    text: "DEBIT";
+                    width: 100px;
+                    horizontal-alignment: right;
+                }
+                Caps {
+                    text: "CREDIT";
+                    width: 100px;
+                    horizontal-alignment: right;
+                }
+            }
+            Lines {
+                lines: Store.cur.lines;
+                bold: true;
+                spacing: 8px;
+            }
+        }
+    }
+    Rectangle { vertical-stretch: 1; }
+    HorizontalLayout {
+        spacing: 10px;
+        PillButton {
+            text: "Delete";
+            danger: true;
+            horizontal-stretch: 1;
+            clicked => { Store.delete-entry(); }
+        }
+        PillButton {
+            text: "Done";
+            primary: true;
+            horizontal-stretch: 1;
+            clicked => { Store.close-overlay(); }
+        }
+    }
+}
+
+component AccountForm inherits VerticalLayout {
+    padding: 30px;
+    spacing: 12px;
+    Heading {
+        text: Store.af-editing ? "Edit account" : "New account";
+        font-size: 26px;
+    }
+    FieldLabel { text: "Name"; }
+    LineEdit {
+        text <=> Store.af-name;
+        placeholder-text: "e.g. Fuel";
+        accepted => { Store.save-account(); }
+    }
+    FieldLabel { text: "Type"; }
+    ComboBox {
+        model: ["Asset — what I have", "Liability — what I owe", "Equity", "Income", "Expense"];
+        current-index <=> Store.af-type;
+    }
+    if Store.af-type == 4: VerticalLayout {
+        spacing: 5px;
+        FieldLabel { text: "Monthly budget (MRU, optional)"; }
+        LineEdit {
+            text <=> Store.af-budget;
+            placeholder-text: "0";
+            accepted => { Store.save-account(); }
+        }
+    }
+    if Store.af-error != "": T {
+        text: Store.af-error;
+        font-size: 13px;
+        font-weight: 600;
+        color: P.a700;
+    }
+    Rectangle { vertical-stretch: 1; }
+    HorizontalLayout {
+        spacing: 10px;
+        if Store.af-editing: PillButton {
+            text: "Delete";
+            danger: true;
+            horizontal-stretch: 1;
+            clicked => { Store.delete-account(); }
+        }
+        PillButton {
+            text: "Save";
+            primary: true;
+            horizontal-stretch: 2;
+            clicked => { Store.save-account(); }
+        }
+    }
+}
+
+// ───────────────────────── window ─────────────────────────
+
+export component AppWindow inherits Window {
+    title: "Ledger — MRU";
+    // Generated by branding/make_icons.py. X11 shows it; Wayland compositors
+    // (Hyprland) use the .desktop entry matched by the xdg app id instead.
+    icon: @image-url("icons/ledger-mru.png");
+    preferred-width: 1240px;
+    preferred-height: 800px;
+    min-width: 1000px;
+    min-height: 640px;
+    background: P.bg;
+    default-font-family: "Figtree";
+    default-font-size: 14px;
+
+    HorizontalLayout {
+        Rectangle {
+            width: 236px;
+            background: P.surface;
+            VerticalLayout {
+                padding: 20px;
+                padding-top: 28px;
+                spacing: 6px;
+                HorizontalLayout {
+                    padding-left: 12px;
+                    padding-bottom: 22px;
+                    spacing: 10px;
+                    alignment: start;
+                    Heading {
+                        text: "Ledger";
+                        font-size: 30px;
+                    }
+                    VerticalLayout {
+                        alignment: center;
+                        Tag {
+                            text: "MRU";
+                            tone: 2;
+                        }
+                    }
+                }
+                NavItem {
+                    icon: Icons.home;
+                    label: "Home";
+                    active: Store.tab == 0;
+                    clicked => { Store.tab = 0; }
+                }
+                NavItem {
+                    icon: Icons.journal;
+                    label: "Journal";
+                    active: Store.tab == 1;
+                    clicked => { Store.tab = 1; }
+                }
+                NavItem {
+                    icon: Icons.ledger;
+                    label: "Ledger";
+                    active: Store.tab == 2;
+                    clicked => { Store.tab = 2; }
+                }
+                NavItem {
+                    icon: Icons.reports;
+                    label: "Reports";
+                    active: Store.tab == 3;
+                    clicked => { Store.tab = 3; }
+                }
+                NavItem {
+                    icon: Icons.accounts;
+                    label: "Accounts";
+                    active: Store.tab == 4;
+                    clicked => { Store.tab = 4; }
+                }
+                Rectangle { vertical-stretch: 1; }
+                PillButton {
+                    text: "+ New entry";
+                    primary: true;
+                    clicked => { Store.open-add(); }
+                }
+                Muted {
+                    text: Store.pro ? "Accountant mode" : "Simple mode";
+                    horizontal-alignment: center;
+                    height: 28px;
+                }
+            }
+        }
+        VerticalLayout {
+            horizontal-stretch: 1;
+            HorizontalLayout {
+                padding: 30px;
+                padding-bottom: 16px;
+                spacing: 12px;
+                Heading {
+                    text: ["Overview", "Journal", "Ledger", "Reports", "Accounts"][Store.tab];
+                    font-size: 34px;
+                    horizontal-stretch: 1;
+                }
+                if Store.tab != 4: MonthSwitcher { }
+            }
+            if Store.notice != "": VerticalLayout {
+                padding-left: 30px;
+                padding-right: 30px;
+                padding-bottom: 14px;
+                Rectangle {
+                    background: P.a100;
+                    border-radius: 20px;
+                    border-width: 1px;
+                    border-color: P.a400;
+                    HorizontalLayout {
+                        padding: 16px;
+                        padding-left: 20px;
+                        spacing: 16px;
+                        T {
+                            text: Store.notice;
+                            color: P.a900;
+                            wrap: word-wrap;
+                            horizontal-stretch: 1;
+                        }
+                        VerticalLayout {
+                            alignment: center;
+                            PillButton {
+                                text: "OK";
+                                clicked => { Store.notice = ""; }
+                            }
+                        }
+                    }
+                }
+            }
+            // First launch (not while sync is on: it would reach other devices).
+            if Store.notice == "" && Store.only-demo && !Store.demo-seen && !Store.sync-on && Store.tab == 0: VerticalLayout {
+                padding-left: 30px;
+                padding-right: 30px;
+                padding-bottom: 14px;
+                Rectangle {
+                    background: P.g100;
+                    border-radius: 20px;
+                    HorizontalLayout {
+                        padding: 12px;
+                        padding-left: 20px;
+                        spacing: 12px;
+                        T {
+                            text: "These are sample entries, to try the app.";
+                            color: P.g900;
+                            wrap: word-wrap;
+                            horizontal-stretch: 1;
+                        }
+                        VerticalLayout {
+                            alignment: center;
+                            HorizontalLayout {
+                                spacing: 10px;
+                                PillButton {
+                                    text: "Later";
+                                    font-size: 14px;
+                                    clicked => { Store.demo-seen = true; }
+                                }
+                                PillButton {
+                                    text: "Start with an empty book";
+                                    primary: true;
+                                    font-size: 14px;
+                                    clicked => { Store.start-empty(); }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+            ScrollView {
+                VerticalLayout {
+                    padding: 30px;
+                    padding-top: 4px;
+                    alignment: start;
+                    if Store.tab == 0: HomeView { }
+                    if Store.tab == 1: JournalView { }
+                    if Store.tab == 2: LedgerView { }
+                    if Store.tab == 3: ReportsView { }
+                    if Store.tab == 4: AccountsView { }
+                }
+            }
+        }
+    }
+
+    if Store.overlay == 1: Drawer {
+        AddForm { }
+    }
+    if Store.overlay == 2: Drawer {
+        EntryDetail { }
+    }
+    if Store.overlay == 3: Drawer {
+        AccountForm { }
+    }
+
+    if Store.toast != "": Rectangle {
+        x: (parent.width - self.width) / 2;
+        y: parent.height - 76px;
+        height: 42px;
+        width: msg.preferred-width + (Store.toast-undo ? 110px : 44px);
+        border-radius: 21px;
+        background: P.n900;
+        drop-shadow-blur: 12px;
+        drop-shadow-color: #2e2b2540;
+        HorizontalLayout {
+            padding-left: 22px;
+            padding-right: 8px;
+            spacing: 8px;
+            msg := T {
+                text: Store.toast;
+                color: P.bg;
+                font-size: 13px;
+            }
+            if Store.toast-undo: LinkButton {
+                text: "Undo";
+                tint: P.a300;
+                clicked => { Store.undo(); }
+            }
+        }
+    }
+}

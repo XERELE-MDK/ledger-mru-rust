@@ -1,0 +1,1046 @@
+{
+  "accounts": [
+    {
+      "id": "cash",
+      "name": "Cash",
+      "type": "asset"
+    },
+    {
+      "id": "bank",
+      "name": "Bank account",
+      "type": "asset"
+    },
+    {
+      "id": "wallet",
+      "name": "Mobile wallet",
+      "type": "asset"
+    },
+    {
+      "id": "savings",
+      "name": "Savings",
+      "type": "asset"
+    },
+    {
+      "id": "loan",
+      "name": "Money I owe",
+      "type": "liability"
+    },
+    {
+      "id": "opening",
+      "name": "Opening balance",
+      "type": "equity"
+    },
+    {
+      "id": "salary",
+      "name": "Salary",
+      "type": "income"
+    },
+    {
+      "id": "side",
+      "name": "Side work",
+      "type": "income"
+    },
+    {
+      "id": "rent",
+      "name": "Rent",
+      "type": "expense",
+      "budget": 8000.0
+    },
+    {
+      "id": "food",
+      "name": "Groceries",
+      "type": "expense",
+      "budget": 5000.0
+    },
+    {
+      "id": "transport",
+      "name": "Transport",
+      "type": "expense",
+      "budget": 1500.0
+    },
+    {
+      "id": "utilities",
+      "name": "Water & electricity",
+      "type": "expense",
+      "budget": 1200.0
+    },
+    {
+      "id": "phone",
+      "name": "Phone & internet",
+      "type": "expense",
+      "budget": 600.0
+    },
+    {
+      "id": "eating",
+      "name": "Eating out",
+      "type": "expense",
+      "budget": 1500.0
+    },
+    {
+      "id": "family",
+      "name": "Family support",
+      "type": "expense",
+      "budget": 3000.0
+    },
+    {
+      "id": "health",
+      "name": "Health",
+      "type": "expense",
+      "budget": 800.0
+    },
+    {
+      "id": "fuel",
+      "name": "Fuel",
+      "type": "expense",
+      "budget": 2000.0,
+      "updatedAt": 1795231464452
+    }
+  ],
+  "entries": [
+    {
+      "id": "s20261121-1",
+      "date": "2026-09-02",
+      "memo": "Monthly rent",
+      "lines": [
+        {
+          "a": "rent",
+          "dr": 8000.0,
+          "cr": 0.0
+        },
+        {
+          "a": "bank",
+          "dr": 0.0,
+          "cr": 8000.0
+        }
+      ]
+    },
+    {
+      "id": "s20261121-2",
+      "date": "2026-09-03",
+      "memo": "ATM withdrawal",
+      "lines": [
+        {
+          "a": "cash",
+          "dr": 4000.0,
+          "cr": 0.0
+        },
+        {
+          "a": "bank",
+          "dr": 0.0,
+          "cr": 4000.0
+        }
+      ]
+    },
+    {
+      "id": "s20261121-3",
+      "date": "2026-09-04",
+      "memo": "Salary",
+      "lines": [
+        {
+          "a": "bank",
+          "dr": 25000.0,
+          "cr": 0.0
+        },
+        {
+          "a": "salary",
+          "dr": 0.0,
+          "cr": 25000.0
+        }
+      ]
+    },
+    {
+      "id": "s20261121-4",
+      "date": "2026-09-05",
+      "memo": "Electricity & water bill",
+      "lines": [
+        {
+          "a": "utilities",
+          "dr": 1080.0,
+          "cr": 0.0
+        },
+        {
+          "a": "wallet",
+          "dr": 0.0,
+          "cr": 1080.0
+        }
+      ]
+    },
+    {
+      "id": "s20261121-5",
+      "date": "2026-09-06",
+      "memo": "Phone & internet plan",
+      "lines": [
+        {
+          "a": "phone",
+          "dr": 500.0,
+          "cr": 0.0
+        },
+        {
+          "a": "wallet",
+          "dr": 0.0,
+          "cr": 500.0
+        }
+      ]
+    },
+    {
+      "id": "s20261121-6",
+      "date": "2026-09-06",
+      "memo": "Move to savings",
+      "lines": [
+        {
+          "a": "savings",
+          "dr": 3000.0,
+          "cr": 0.0
+        },
+        {
+          "a": "bank",
+          "dr": 0.0,
+          "cr": 3000.0
+        }
+      ]
+    },
+    {
+      "id": "s20261121-7",
+      "date": "2026-09-07",
+      "memo": "Weekly groceries",
+      "lines": [
+        {
+          "a": "food",
+          "dr": 1150.0,
+          "cr": 0.0
+        },
+        {
+          "a": "cash",
+          "dr": 0.0,
+          "cr": 1150.0
+        }
+      ]
+    },
+    {
+      "id": "s20261121-8",
+      "date": "2026-09-08",
+      "memo": "Taxi",
+      "lines": [
+        {
+          "a": "transport",
+          "dr": 300.0,
+          "cr": 0.0
+        },
+        {
+          "a": "cash",
+          "dr": 0.0,
+          "cr": 300.0
+        }
+      ]
+    },
+    {
+      "id": "s20261121-9",
+      "date": "2026-09-10",
+      "memo": "Sent to family",
+      "lines": [
+        {
+          "a": "family",
+          "dr": 3000.0,
+          "cr": 0.0
+        },
+        {
+          "a": "bank",
+          "dr": 0.0,
+          "cr": 3000.0
+        }
+      ]
+    },
+    {
+      "id": "s20261121-10",
+      "date": "2026-09-12",
+      "memo": "Lunch with friends",
+      "lines": [
+        {
+          "a": "eating",
+          "dr": 450.0,
+          "cr": 0.0
+        },
+        {
+          "a": "cash",
+          "dr": 0.0,
+          "cr": 450.0
+        }
+      ]
+    },
+    {
+      "id": "s20261121-11",
+      "date": "2026-09-14",
+      "memo": "Weekly groceries",
+      "lines": [
+        {
+          "a": "food",
+          "dr": 1240.0,
+          "cr": 0.0
+        },
+        {
+          "a": "cash",
+          "dr": 0.0,
+          "cr": 1240.0
+        }
+      ]
+    },
+    {
+      "id": "s20261121-12",
+      "date": "2026-09-15",
+      "memo": "Wallet top-up",
+      "lines": [
+        {
+          "a": "wallet",
+          "dr": 2000.0,
+          "cr": 0.0
+        },
+        {
+          "a": "bank",
+          "dr": 0.0,
+          "cr": 2000.0
+        }
+      ]
+    },
+    {
+      "id": "s20261121-13",
+      "date": "2026-09-16",
+      "memo": "Taxi",
+      "lines": [
+        {
+          "a": "transport",
+          "dr": 350.0,
+          "cr": 0.0
+        },
+        {
+          "a": "wallet",
+          "dr": 0.0,
+          "cr": 350.0
+        }
+      ]
+    },
+    {
+      "id": "s20261121-14",
+      "date": "2026-09-21",
+      "memo": "Weekly groceries",
+      "lines": [
+        {
+          "a": "food",
+          "dr": 1180.0,
+          "cr": 0.0
+        },
+        {
+          "a": "cash",
+          "dr": 0.0,
+          "cr": 1180.0
+        }
+      ]
+    },
+    {
+      "id": "s20261121-15",
+      "date": "2026-09-23",
+      "memo": "Dinner out",
+      "lines": [
+        {
+          "a": "eating",
+          "dr": 700.0,
+          "cr": 0.0
+        },
+        {
+          "a": "wallet",
+          "dr": 0.0,
+          "cr": 700.0
+        }
+      ]
+    },
+    {
+      "id": "s20261121-16",
+      "date": "2026-09-26",
+      "memo": "Taxi",
+      "lines": [
+        {
+          "a": "transport",
+          "dr": 280.0,
+          "cr": 0.0
+        },
+        {
+          "a": "cash",
+          "dr": 0.0,
+          "cr": 280.0
+        }
+      ]
+    },
+    {
+      "id": "s20261121-17",
+      "date": "2026-09-28",
+      "memo": "Weekly groceries",
+      "lines": [
+        {
+          "a": "food",
+          "dr": 1300.0,
+          "cr": 0.0
+        },
+        {
+          "a": "cash",
+          "dr": 0.0,
+          "cr": 1300.0
+        }
+      ]
+    },
+    {
+      "id": "s20261121-18",
+      "date": "2026-10-02",
+      "memo": "Monthly rent",
+      "lines": [
+        {
+          "a": "rent",
+          "dr": 8000.0,
+          "cr": 0.0
+        },
+        {
+          "a": "bank",
+          "dr": 0.0,
+          "cr": 8000.0
+        }
+      ]
+    },
+    {
+      "id": "s20261121-19",
+      "date": "2026-10-03",
+      "memo": "ATM withdrawal",
+      "lines": [
+        {
+          "a": "cash",
+          "dr": 4500.0,
+          "cr": 0.0
+        },
+        {
+          "a": "bank",
+          "dr": 0.0,
+          "cr": 4500.0
+        }
+      ]
+    },
+    {
+      "id": "s20261121-20",
+      "date": "2026-10-04",
+      "memo": "Salary",
+      "lines": [
+        {
+          "a": "bank",
+          "dr": 25000.0,
+          "cr": 0.0
+        },
+        {
+          "a": "salary",
+          "dr": 0.0,
+          "cr": 25000.0
+        }
+      ]
+    },
+    {
+      "id": "s20261121-21",
+      "date": "2026-10-05",
+      "memo": "Electricity & water bill",
+      "lines": [
+        {
+          "a": "utilities",
+          "dr": 1150.0,
+          "cr": 0.0
+        },
+        {
+          "a": "wallet",
+          "dr": 0.0,
+          "cr": 1150.0
+        }
+      ]
+    },
+    {
+      "id": "s20261121-22",
+      "date": "2026-10-06",
+      "memo": "Phone & internet plan",
+      "lines": [
+        {
+          "a": "phone",
+          "dr": 500.0,
+          "cr": 0.0
+        },
+        {
+          "a": "wallet",
+          "dr": 0.0,
+          "cr": 500.0
+        }
+      ]
+    },
+    {
+      "id": "s20261121-23",
+      "date": "2026-10-06",
+      "memo": "Move to savings",
+      "lines": [
+        {
+          "a": "savings",
+          "dr": 3000.0,
+          "cr": 0.0
+        },
+        {
+          "a": "bank",
+          "dr": 0.0,
+          "cr": 3000.0
+        }
+      ]
+    },
+    {
+      "id": "s20261121-24",
+      "date": "2026-10-07",
+      "memo": "Weekly groceries",
+      "lines": [
+        {
+          "a": "food",
+          "dr": 1320.0,
+          "cr": 0.0
+        },
+        {
+          "a": "cash",
+          "dr": 0.0,
+          "cr": 1320.0
+        }
+      ]
+    },
+    {
+      "id": "s20261121-25",
+      "date": "2026-10-08",
+      "memo": "Taxi",
+      "lines": [
+        {
+          "a": "transport",
+          "dr": 250.0,
+          "cr": 0.0
+        },
+        {
+          "a": "cash",
+          "dr": 0.0,
+          "cr": 250.0
+        }
+      ]
+    },
+    {
+      "id": "s20261121-26",
+      "date": "2026-10-10",
+      "memo": "Sent to family",
+      "lines": [
+        {
+          "a": "family",
+          "dr": 3000.0,
+          "cr": 0.0
+        },
+        {
+          "a": "bank",
+          "dr": 0.0,
+          "cr": 3000.0
+        }
+      ]
+    },
+    {
+      "id": "s20261121-27",
+      "date": "2026-10-12",
+      "memo": "Lunch with friends",
+      "lines": [
+        {
+          "a": "eating",
+          "dr": 600.0,
+          "cr": 0.0
+        },
+        {
+          "a": "cash",
+          "dr": 0.0,
+          "cr": 600.0
+        }
+      ]
+    },
+    {
+      "id": "s20261121-28",
+      "date": "2026-10-14",
+      "memo": "Weekly groceries",
+      "lines": [
+        {
+          "a": "food",
+          "dr": 1100.0,
+          "cr": 0.0
+        },
+        {
+          "a": "cash",
+          "dr": 0.0,
+          "cr": 1100.0
+        }
+      ]
+    },
+    {
+      "id": "s20261121-29",
+      "date": "2026-10-15",
+      "memo": "Wallet top-up",
+      "lines": [
+        {
+          "a": "wallet",
+          "dr": 2000.0,
+          "cr": 0.0
+        },
+        {
+          "a": "bank",
+          "dr": 0.0,
+          "cr": 2000.0
+        }
+      ]
+    },
+    {
+      "id": "s20261121-30",
+      "date": "2026-10-16",
+      "memo": "Taxi",
+      "lines": [
+        {
+          "a": "transport",
+          "dr": 400.0,
+          "cr": 0.0
+        },
+        {
+          "a": "wallet",
+          "dr": 0.0,
+          "cr": 400.0
+        }
+      ]
+    },
+    {
+      "id": "s20261121-31",
+      "date": "2026-10-18",
+      "memo": "Pharmacy",
+      "lines": [
+        {
+          "a": "health",
+          "dr": 320.0,
+          "cr": 0.0
+        },
+        {
+          "a": "cash",
+          "dr": 0.0,
+          "cr": 320.0
+        }
+      ]
+    },
+    {
+      "id": "s20261121-32",
+      "date": "2026-10-19",
+      "memo": "Website job",
+      "lines": [
+        {
+          "a": "wallet",
+          "dr": 4000.0,
+          "cr": 0.0
+        },
+        {
+          "a": "side",
+          "dr": 0.0,
+          "cr": 4000.0
+        }
+      ]
+    },
+    {
+      "id": "s20261121-33",
+      "date": "2026-10-21",
+      "memo": "Weekly groceries",
+      "lines": [
+        {
+          "a": "food",
+          "dr": 1260.0,
+          "cr": 0.0
+        },
+        {
+          "a": "cash",
+          "dr": 0.0,
+          "cr": 1260.0
+        }
+      ]
+    },
+    {
+      "id": "s20261121-34",
+      "date": "2026-10-23",
+      "memo": "Dinner out",
+      "lines": [
+        {
+          "a": "eating",
+          "dr": 520.0,
+          "cr": 0.0
+        },
+        {
+          "a": "wallet",
+          "dr": 0.0,
+          "cr": 520.0
+        }
+      ]
+    },
+    {
+      "id": "s20261121-35",
+      "date": "2026-10-24",
+      "memo": "Borrowed from brother",
+      "lines": [
+        {
+          "a": "cash",
+          "dr": 2000.0,
+          "cr": 0.0
+        },
+        {
+          "a": "loan",
+          "dr": 0.0,
+          "cr": 2000.0
+        }
+      ]
+    },
+    {
+      "id": "s20261121-36",
+      "date": "2026-10-26",
+      "memo": "Taxi",
+      "lines": [
+        {
+          "a": "transport",
+          "dr": 350.0,
+          "cr": 0.0
+        },
+        {
+          "a": "cash",
+          "dr": 0.0,
+          "cr": 350.0
+        }
+      ]
+    },
+    {
+      "id": "s20261121-37",
+      "date": "2026-10-28",
+      "memo": "Weekly groceries",
+      "lines": [
+        {
+          "a": "food",
+          "dr": 1210.0,
+          "cr": 0.0
+        },
+        {
+          "a": "cash",
+          "dr": 0.0,
+          "cr": 1210.0
+        }
+      ]
+    },
+    {
+      "id": "s20261121-38",
+      "date": "2026-11-02",
+      "memo": "Monthly rent",
+      "lines": [
+        {
+          "a": "rent",
+          "dr": 8000.0,
+          "cr": 0.0
+        },
+        {
+          "a": "bank",
+          "dr": 0.0,
+          "cr": 8000.0
+        }
+      ]
+    },
+    {
+      "id": "s20261121-39",
+      "date": "2026-11-03",
+      "memo": "ATM withdrawal",
+      "lines": [
+        {
+          "a": "cash",
+          "dr": 4000.0,
+          "cr": 0.0
+        },
+        {
+          "a": "bank",
+          "dr": 0.0,
+          "cr": 4000.0
+        }
+      ]
+    },
+    {
+      "id": "s20261121-40",
+      "date": "2026-11-04",
+      "memo": "Salary",
+      "lines": [
+        {
+          "a": "bank",
+          "dr": 25000.0,
+          "cr": 0.0
+        },
+        {
+          "a": "salary",
+          "dr": 0.0,
+          "cr": 25000.0
+        }
+      ]
+    },
+    {
+      "id": "s20261121-41",
+      "date": "2026-11-05",
+      "memo": "Electricity & water bill",
+      "lines": [
+        {
+          "a": "utilities",
+          "dr": 1240.0,
+          "cr": 0.0
+        },
+        {
+          "a": "wallet",
+          "dr": 0.0,
+          "cr": 1240.0
+        }
+      ]
+    },
+    {
+      "id": "s20261121-42",
+      "date": "2026-11-06",
+      "memo": "Phone & internet plan",
+      "lines": [
+        {
+          "a": "phone",
+          "dr": 500.0,
+          "cr": 0.0
+        },
+        {
+          "a": "wallet",
+          "dr": 0.0,
+          "cr": 500.0
+        }
+      ]
+    },
+    {
+      "id": "s20261121-43",
+      "date": "2026-11-06",
+      "memo": "Move to savings",
+      "lines": [
+        {
+          "a": "savings",
+          "dr": 2500.0,
+          "cr": 0.0
+        },
+        {
+          "a": "bank",
+          "dr": 0.0,
+          "cr": 2500.0
+        }
+      ]
+    },
+    {
+      "id": "s20261121-44",
+      "date": "2026-11-07",
+      "memo": "Weekly groceries",
+      "lines": [
+        {
+          "a": "food",
+          "dr": 1260.0,
+          "cr": 0.0
+        },
+        {
+          "a": "cash",
+          "dr": 0.0,
+          "cr": 1260.0
+        }
+      ]
+    },
+    {
+      "id": "s20261121-45",
+      "date": "2026-11-08",
+      "memo": "Taxi",
+      "lines": [
+        {
+          "a": "transport",
+          "dr": 400.0,
+          "cr": 0.0
+        },
+        {
+          "a": "cash",
+          "dr": 0.0,
+          "cr": 400.0
+        }
+      ]
+    },
+    {
+      "id": "s20261121-46",
+      "date": "2026-11-10",
+      "memo": "Sent to family",
+      "lines": [
+        {
+          "a": "family",
+          "dr": 3000.0,
+          "cr": 0.0
+        },
+        {
+          "a": "bank",
+          "dr": 0.0,
+          "cr": 3000.0
+        }
+      ]
+    },
+    {
+      "id": "s20261121-47",
+      "date": "2026-11-12",
+      "memo": "Lunch with friends",
+      "lines": [
+        {
+          "a": "eating",
+          "dr": 380.0,
+          "cr": 0.0
+        },
+        {
+          "a": "cash",
+          "dr": 0.0,
+          "cr": 380.0
+        }
+      ]
+    },
+    {
+      "id": "s20261121-48",
+      "date": "2026-11-14",
+      "memo": "Weekly groceries",
+      "lines": [
+        {
+          "a": "food",
+          "dr": 1380.0,
+          "cr": 0.0
+        },
+        {
+          "a": "cash",
+          "dr": 0.0,
+          "cr": 1380.0
+        }
+      ]
+    },
+    {
+      "id": "s20261121-49",
+      "date": "2026-11-15",
+      "memo": "Wallet top-up",
+      "lines": [
+        {
+          "a": "wallet",
+          "dr": 2000.0,
+          "cr": 0.0
+        },
+        {
+          "a": "bank",
+          "dr": 0.0,
+          "cr": 2000.0
+        }
+      ]
+    },
+    {
+      "id": "s20261121-50",
+      "date": "2026-11-16",
+      "memo": "Taxi",
+      "lines": [
+        {
+          "a": "transport",
+          "dr": 300.0,
+          "cr": 0.0
+        },
+        {
+          "a": "wallet",
+          "dr": 0.0,
+          "cr": 300.0
+        }
+      ]
+    },
+    {
+      "id": "s20261121-51",
+      "date": "2026-11-17",
+      "memo": "Repaid brother (part)",
+      "lines": [
+        {
+          "a": "loan",
+          "dr": 1000.0,
+          "cr": 0.0
+        },
+        {
+          "a": "wallet",
+          "dr": 0.0,
+          "cr": 1000.0
+        }
+      ]
+    },
+    {
+      "id": "s20261121-52",
+      "date": "2026-11-18",
+      "memo": "Pharmacy",
+      "lines": [
+        {
+          "a": "health",
+          "dr": 950.0,
+          "cr": 0.0
+        },
+        {
+          "a": "cash",
+          "dr": 0.0,
+          "cr": 950.0
+        }
+      ]
+    },
+    {
+      "id": "s20261121-53",
+      "date": "2026-11-19",
+      "memo": "Website job",
+      "lines": [
+        {
+          "a": "wallet",
+          "dr": 2500.0,
+          "cr": 0.0
+        },
+        {
+          "a": "side",
+          "dr": 0.0,
+          "cr": 2500.0
+        }
+      ]
+    },
+    {
+      "id": "s20261121-54",
+      "date": "2026-11-21",
+      "memo": "Weekly groceries",
+      "lines": [
+        {
+          "a": "food",
+          "dr": 1200.0,
+          "cr": 0.0
+        },
+        {
+          "a": "cash",
+          "dr": 0.0,
+          "cr": 1200.0
+        }
+      ]
+    },
+    {
+      "id": "android-test",
+      "date": "2026-11-20",
+      "memo": "Café Nouakchott",
+      "lines": [
+        {
+          "a": "eating",
+          "dr": 1250.5,
+          "cr": 0.0
+        },
+        {
+          "a": "cash",
+          "dr": 0.0,
+          "cr": 1250.5
+        }
+      ]
+    }
+  ],
+  "mode": "pro",
+  "hints": true,
+  "khoums": true,
+  "theme": "dark",
+  "deletedEntries": [
+    {
+      "id": "s20261121-0",
+      "at": 1795231464455
+    }
+  ]
+}

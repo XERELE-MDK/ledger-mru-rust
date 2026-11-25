@@ -1,0 +1,83 @@
+{
+  "accounts": [
+    {
+      "id": "cash",
+      "name": "Cash",
+      "type": "asset",
+      "updatedAt": 100
+    },
+    {
+      "id": "food",
+      "name": "Groceries",
+      "type": "expense",
+      "budget": 6000,
+      "updatedAt": 200
+    },
+    {
+      "id": "salary",
+      "name": "Salary",
+      "type": "income",
+      "updatedAt": 100
+    },
+    {
+      "id": "gift",
+      "name": "Gifts",
+      "type": "income",
+      "updatedAt": 120
+    }
+  ],
+  "entries": [
+    {
+      "id": "e1",
+      "date": "2026-11-02",
+      "memo": "Market",
+      "lines": [
+        {
+          "a": "food",
+          "dr": 1200,
+          "cr": 0
+        },
+        {
+          "a": "cash",
+          "dr": 0,
+          "cr": 1200
+        }
+      ]
+    },
+    {
+      "id": "e4",
+      "date": "2026-11-06",
+      "memo": "Gift from uncle",
+      "lines": [
+        {
+          "a": "cash",
+          "dr": 2000,
+          "cr": 0
+        },
+        {
+          "a": "gift",
+          "dr": 0,
+          "cr": 2000
+        }
+      ]
+    }
+  ],
+  "deletedEntries": [
+    {
+      "id": "e2",
+      "at": 160
+    }
+  ],
+  "deletedAccounts": [
+    {
+      "id": "fuel",
+      "at": 150
+    },
+    {
+      "id": "old",
+      "at": 150
+    }
+  ],
+  "mode": "pro",
+  "theme": "dark"
+}

@@ -1,0 +1,246 @@
+// Organic design-system tokens + small reusable widgets.
+
+import "./fonts/Caprasimo-Regular.ttf";
+import "./fonts/Figtree-400.ttf";
+import "./fonts/Figtree-600.ttf";
+import "./fonts/Figtree-700.ttf";
+import "./fonts/Figtree-800.ttf";
+
+export global P {
+    /// Set from Rust (Appearance: System / Light / Dark).
+    in-out property <bool> dark;
+
+    // Hover / press tints of the text colour (light: dark ink, dark: cream).
+    out property <color> hover: dark ? #f3e9d814 : #201e1d12;
+    out property <color> press: dark ? #f3e9d826 : #201e1d24;
+
+    // Hero card ("You kept"): deep sage in both modes.
+    out property <color> hero-bg: dark ? #2c3620 : #3d472b;
+    out property <color> hero-circle: dark ? #36422a : #56633f;
+    out property <color> hero-text: dark ? #f3e9d8 : #f5ead8;
+    out property <color> hero-caps: dark ? #b8c89c : #e1eecc;
+    out property <color> hero-sub: dark ? #d3e0bd : #f0fae1;
+    out property <color> bg: dark ? #1c1a17 : #f5ead8;
+    out property <color> surface: dark ? #2a2621 : #ebddc5;
+    out property <color> text: dark ? #f3e9d8 : #201e1d;
+    out property <color> accent: dark ? #d67f48 : #c67139;
+    out property <color> divider: dark ? #f3e9d829 : #201e1d29;
+
+    out property <color> n100: dark ? #35312b : #f9f4ed;
+    out property <color> n200: dark ? #3a352e : #eee7db;
+    out property <color> n300: dark ? #4a443b : #dcd3c4;
+    out property <color> n400: dark ? #5e574c : #c0b6a5;
+    out property <color> n500: dark ? #82796a : #a19786;
+    out property <color> n600: dark ? #a19786 : #82796a;
+    out property <color> n700: dark ? #b3a996 : #645c50;
+    out property <color> n800: dark ? #d2c8b6 : #474238;
+    out property <color> n900: dark ? #f0e6d4 : #2e2b25;
+
+    out property <color> a100: dark ? #3a2618 : #fff2eb;
+    out property <color> a200: dark ? #4a2c18 : #ffe1d0;
+    out property <color> a300: dark ? #6b3a1c : #ffc6a5;
+    out property <color> a400: dark ? #c06a33 : #f6a06b;
+    out property <color> a500: dark ? #d67f48 : #d67f48;
+    out property <color> a600: dark ? #e08e57 : #b2622d;
+    out property <color> a700: dark ? #f0a370 : #8c491a;
+    out property <color> a800: dark ? #ffc6a5 : #643312;
+    out property <color> a900: dark ? #ffe1d0 : #402310;
+
+    out property <color> g100: dark ? #26301c : #f0fae1;
+    out property <color> g200: dark ? #2f3a22 : #e1eecc;
+    out property <color> g300: dark ? #3f4c2e : #ccdbb2;
+    out property <color> g400: dark ? #6e7f55 : #aebf92;
+    out property <color> g500: dark ? #8fa073 : #8fa073;
+    out property <color> g600: dark ? #a3b487 : #728157;
+    out property <color> g700: dark ? #b8c89c : #56633f;
+    out property <color> g800: dark ? #d3e0bd : #3d472b;
+    out property <color> g900: dark ? #e7f2d6 : #272e1b;
+
+    out property <[color]> pal: dark
+        ? [#d67f48, #8fa073, #f6a06b, #aebf92, #b2622d, #728157, #a19786, #82796a]
+        : [#d67f48, #8fa073, #ffc6a5, #ccdbb2, #8c491a, #56633f, #c0b6a5, #82796a];
+}
+
+// Lucide icon paths (24×24 viewbox).
+export global Icons {
+    out property <string> home: "M15 21v-8a1 1 0 0 0-1-1h-4a1 1 0 0 0-1 1v8 M3 10a2 2 0 0 1 .709-1.528l7-5.999a2 2 0 0 1 2.582 0l7 5.999A2 2 0 0 1 21 10v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z";
+    out property <string> journal: "M12 7v14 M3 18a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1h5a4 4 0 0 1 4 4 4 4 0 0 1 4-4h5a1 1 0 0 1 1 1v13a1 1 0 0 1-1 1h-6a3 3 0 0 0-3 3 3 3 0 0 0-3-3z";
+    out property <string> ledger: "M12 2 2 7l10 5 10-5-10-5z M2 17l10 5 10-5 M2 12l10 5 10-5";
+    out property <string> reports: "M3 3v16a2 2 0 0 0 2 2h16 M18 17V9 M13 17V5 M8 17v-3";
+    out property <string> accounts: "M3 6h.01 M3 12h.01 M3 18h.01 M8 6h13 M8 12h13 M8 18h13";
+    out property <string> left: "M15 18l-6-6 6-6";
+    out property <string> right: "M9 18l6-6-6-6";
+    out property <string> plus: "M5 12h14 M12 5v14";
+    out property <string> arrow-in: "M17 7 7 17 M17 17H7V7";
+    out property <string> arrow-out: "M7 7h10v10 M7 17 17 7";
+}
+
+export component Icon inherits Path {
+    in property <string> icon;
+    in property <color> tint: P.text;
+    width: 20px;
+    height: 20px;
+    commands: root.icon;
+    viewbox-width: 24;
+    viewbox-height: 24;
+    stroke: root.tint;
+    stroke-width: 2.4px;
+    stroke-line-cap: round;
+    fill: transparent;
+}
+
+export component Heading inherits Text {
+    font-family: "Caprasimo";
+    color: P.text;
+    vertical-alignment: center;
+}
+
+export component Muted inherits Text {
+    font-size: 12px;
+    color: P.n700;
+    vertical-alignment: center;
+}
+
+/// Small uppercase label (table headers, group titles).
+export component Caps inherits Text {
+    font-size: 11px;
+    letter-spacing: 1px;
+    color: P.n700;
+    vertical-alignment: center;
+}
+
+export component Card inherits Rectangle {
+    background: P.surface;
+    border-radius: 24px;
+}
+
+export component PillButton inherits Rectangle {
+    in property <string> text;
+    in property <bool> primary;
+    in property <bool> danger;
+    in property <length> font-size: 15px;
+    callback clicked;
+    min-height: 42px;
+    min-width: label.preferred-width + 36px;
+    border-radius: self.height / 2;
+    background: root.primary
+        ? (ta.pressed ? P.a700 : ta.has-hover ? P.a600 : P.accent)
+        : (ta.pressed ? P.press : ta.has-hover ? P.hover : transparent);
+    border-width: root.primary ? 0 : 1px;
+    border-color: P.divider;
+    animate background { duration: 100ms; }
+    label := Text {
+        text: root.text;
+        font-family: "Caprasimo";
+        font-size: root.font-size;
+        color: root.primary ? P.bg : root.danger ? P.a700 : P.text;
+    }
+    ta := TouchArea {
+        mouse-cursor: pointer;
+        clicked => { root.clicked(); }
+    }
+}
+
+/// Text-only action in the accent colour ("Budgets", "Journal").
+export component LinkButton inherits Rectangle {
+    in property <string> text;
+    in property <color> tint: P.a700;
+    callback clicked;
+    height: 30px;
+    width: label.preferred-width + 16px;
+    border-radius: 15px;
+    background: ta.has-hover ? #c6713918 : transparent;
+    label := Text {
+        text: root.text;
+        font-family: "Caprasimo";
+        font-size: 13px;
+        color: root.tint;
+    }
+    ta := TouchArea {
+        mouse-cursor: pointer;
+        clicked => { root.clicked(); }
+    }
+}
+
+export component Tag inherits Rectangle {
+    in property <string> text;
+    in property <int> tone; // 0 neutral · 1 accent · 2 sage
+    height: 22px;
+    width: label.preferred-width + 20px;
+    border-radius: 11px;
+    background: root.tone == 1 ? P.a100 : root.tone == 2 ? P.g100 : P.n100;
+    label := Text {
+        text: root.text;
+        font-size: 11px;
+        color: root.tone == 1 ? P.a800 : root.tone == 2 ? P.g800 : P.n800;
+    }
+}
+
+export component Chip inherits Rectangle {
+    in property <string> text;
+    in property <bool> selected;
+    callback clicked;
+    height: 34px;
+    width: label.preferred-width + 28px;
+    border-radius: 17px;
+    background: root.selected ? P.accent : ta.has-hover ? P.n300 : P.surface;
+    label := Text {
+        text: root.text;
+        font-size: 13px;
+        font-weight: 600;
+        color: root.selected ? P.bg : P.text;
+    }
+    ta := TouchArea {
+        mouse-cursor: pointer;
+        clicked => { root.clicked(); }
+    }
+}
+
+export component Segmented inherits Rectangle {
+    in property <[string]> options;
+    in property <int> index;
+    in property <color> track: P.surface;
+    in property <color> sel: P.bg;
+    callback select(int);
+    min-height: 42px;
+    border-radius: self.height / 2;
+    background: root.track;
+    HorizontalLayout {
+        padding: 4px;
+        for o[i] in root.options: Rectangle {
+            border-radius: self.height / 2;
+            background: i == root.index ? root.sel : ta.has-hover ? P.hover : transparent;
+            Text {
+                text: o;
+                font-size: 13px;
+                font-weight: 600;
+                color: i == root.index ? P.text : P.n700;
+            }
+            ta := TouchArea {
+                mouse-cursor: pointer;
+                clicked => { root.select(i); }
+            }
+        }
+    }
+}
+
+export component Bar inherits Rectangle {
+    in property <float> frac;
+    in property <color> fill;
+    height: 8px;
+    border-radius: self.height / 2;
+    background: P.n200;
+    Rectangle {
+        x: 0;
+        y: 0;
+        height: parent.height;
+        width: parent.width * clamp(root.frac, 0, 1);
+        border-radius: parent.height / 2;
+        background: root.fill;
+    }
+}
+
+export component FieldLabel inherits Text {
+    font-size: 12px;
+    color: P.n800;
+}

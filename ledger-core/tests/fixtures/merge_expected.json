@@ -1,0 +1,26 @@
+{
+  "entryIds": [
+    "e1",
+    "e3",
+    "e4",
+    "e5"
+  ],
+  "accounts": {
+    "cash": "Cash",
+    "food": "Groceries",
+    "old": "Old stuff",
+    "salary": "Salary",
+    "gift": "Gifts"
+  },
+  "foodBudget": 6000,
+  "report": {
+    "entriesAdded": 1,
+    "entriesRemoved": 1,
+    "accountsAdded": 1,
+    "accountsUpdated": 1,
+    "accountsRemoved": 1,
+    "accountsKeptInUse": 1,
+    "conflicts": 0
+  },
+  "note": "merge(A, B): A is local. e3 uses 'old' (deleted on B) -> kept; fuel unused -> removed; food: B newer (budget 6000); e2 tombstoned; e4 + gift added; settings stay A's."
+}

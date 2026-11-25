@@ -1,0 +1,107 @@
+{
+  "accounts": [
+    {
+      "id": "cash",
+      "name": "Cash",
+      "type": "asset",
+      "updatedAt": 100
+    },
+    {
+      "id": "food",
+      "name": "Groceries",
+      "type": "expense",
+      "budget": 5000,
+      "updatedAt": 100
+    },
+    {
+      "id": "fuel",
+      "name": "Fuel",
+      "type": "expense",
+      "updatedAt": 100
+    },
+    {
+      "id": "old",
+      "name": "Old stuff",
+      "type": "expense",
+      "updatedAt": 100
+    },
+    {
+      "id": "salary",
+      "name": "Salary",
+      "type": "income",
+      "updatedAt": 100
+    }
+  ],
+  "entries": [
+    {
+      "id": "e1",
+      "date": "2026-11-02",
+      "memo": "Market",
+      "lines": [
+        {
+          "a": "food",
+          "dr": 1200,
+          "cr": 0
+        },
+        {
+          "a": "cash",
+          "dr": 0,
+          "cr": 1200
+        }
+      ]
+    },
+    {
+      "id": "e2",
+      "date": "2026-11-03",
+      "memo": "Bakery",
+      "lines": [
+        {
+          "a": "food",
+          "dr": 150,
+          "cr": 0
+        },
+        {
+          "a": "cash",
+          "dr": 0,
+          "cr": 150
+        }
+      ]
+    },
+    {
+      "id": "e3",
+      "date": "2026-11-04",
+      "memo": "Old thing",
+      "lines": [
+        {
+          "a": "old",
+          "dr": 300,
+          "cr": 0
+        },
+        {
+          "a": "cash",
+          "dr": 0,
+          "cr": 300
+        }
+      ]
+    },
+    {
+      "id": "e5",
+      "date": "2026-11-05",
+      "memo": "Salary",
+      "lines": [
+        {
+          "a": "cash",
+          "dr": 25000,
+          "cr": 0
+        },
+        {
+          "a": "salary",
+          "dr": 0,
+          "cr": 25000
+        }
+      ]
+    }
+  ],
+  "mode": "simple",
+  "theme": "light"
+}
