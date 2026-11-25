@@ -25,6 +25,8 @@ struct State {
     // open overlays
     open_entry: Option<String>,
     open_account: Option<String>,
+    /// Opening balances form: (account id, text typed).
+    opening: Vec<(String, String)>,
     undo: Option<Undo>,
     /// System preference, read once at start-up (before we override the palette).
     system_dark: bool,
@@ -354,6 +356,8 @@ fn refresh(ui: &AppWindow, st: &State) {
     ));
     s.set_data_path(ss(st.path.display().to_string()));
 
+    s.set_empty_book(b.entries.is_empty());
+
     // ── demo data still in the book
     let demo = b.demo_count();
     let own = b.entries.len() - demo;
@@ -567,12 +571,6 @@ fn main() -> Result<(), slint::PlatformError> {
     ui.run()
 }
 
-/// Names for the "note what you already have" hint: first asset, opening equity.
-fn opening_accounts(b: &Book) -> Option<(String, String)> {
-    let first = |k| b.accounts.iter().find(|a| a.kind == k).map(|a| a.name.clone());
-    Some((first(AccountType::Asset)?, first(AccountType::Equity)?))
-}
-
 // Entries would disappear here without a trace, and the other devices would
 // send them back; the demo would go the other way.
 const SYNC_FIRST_RESET: &str = "Sync is on: the demo data would be sent to your other devices, and your entries would come back from them. Disconnect the sync folder first.";
@@ -634,6 +632,7 @@ fn app(path: PathBuf) -> Result<(AppWindow, Shared), slint::PlatformError> {
         all_ids: vec![],
         open_entry: None,
         open_account: None,
+        opening: vec![],
         undo: None,
         system_dark: false,
         device_id: String::new(),
@@ -888,6 +887,42 @@ fn app(path: PathBuf) -> Result<(AppWindow, Shared), slint::PlatformError> {
         }
     });
 
+    // ── opening balances
+    on!(on_open_opening, |ui, st, _t| {
+        let s = ui.global::<Store>();
+        let plain = |v: f64| if v == 0.0 { String::new() } else { f2(v, false).replace(',', "") };
+        let rows: Vec<(String, String, bool, String)> =
+            st.book.opening_rows().into_iter().map(|(a, v)| (a.id.clone(), a.name.clone(), !a.kind.debit_normal(), plain(v))).collect();
+        s.set_open_rows(model(rows.iter().map(|(_, name, debt, text)| OpenRow { name: ss(name), debt: *debt, amount: ss(text) }).collect()));
+        s.set_open_date(ss(st.book.opening_date().map_or_else(today, str::to_string)));
+        s.set_open_error(SharedString::new());
+        st.opening = rows.into_iter().map(|(id, _, _, text)| (id, text)).collect();
+        s.set_overlay(4);
+    });
+    on!(on_edit_opening, |ui, st, _t, i: i32, text: SharedString| {
+        if let Some(r) = st.opening.get_mut(i as usize) {
+            r.1 = text.to_string();
+        }
+        ui.global::<Store>().set_open_error(SharedString::new());
+    });
+    on!(on_save_opening, |ui, st, t| {
+        let s = ui.global::<Store>();
+        let date = s.get_open_date().trim().to_string();
+        let amounts = st.opening.clone();
+        match st.book.set_opening(&date, &amounts, "Opening balances") {
+            Ok(id) => {
+                if id.is_some() {
+                    st.month = date[..7].to_string();
+                }
+                persist(&ui, &st, t);
+                s.set_overlay(0);
+                refresh(&ui, &st);
+                t.show(&ui, if id.is_some() { "Opening balances saved" } else { "Opening balances removed" }, false);
+            }
+            Err(e) => s.set_open_error(ss(e)),
+        }
+    });
+
     // ── data
     on!(on_reset_demo, |ui, st, t| {
         ui.global::<Store>().set_confirm_reset(false);
@@ -914,11 +949,6 @@ fn app(path: PathBuf) -> Result<(AppWindow, Shared), slint::PlatformError> {
         st.undo = undo.then(|| Undo::Book(Box::new(before)));
         persist(&ui, &st, t);
         refresh(&ui, &st);
-        if let Some((cash, opening)) = opening_accounts(&st.book) {
-            s.set_notice(ss(format!(
-                "Demo data removed. To note what you already have: Accountant mode, debit \u{201c}{cash}\u{201d}, credit \u{201c}{opening}\u{201d}."
-            )));
-        }
         t.show(&ui, "Demo data removed", undo);
     });
     on!(on_export_json, |ui, st, t| {
@@ -1129,6 +1159,29 @@ mod shots {
             }
         }
         s.invoke_undo();
+        assert_eq!(st.borrow().book.entries.len(), demo);
+        s.invoke_start_empty();
+        // Opening balances: an error, then a real one, changed, then removed.
+        s.set_tab(0);
+        s.invoke_open_opening();
+        s.invoke_save_opening();
+        assert!(!s.get_open_error().is_empty());
+        snap("0_opening_error");
+        s.invoke_edit_opening(0, "3,000".into());
+        s.invoke_edit_opening(4, "500".into());
+        s.invoke_save_opening();
+        assert_eq!(s.get_assets_total().as_str(), "3,000");
+        assert!(!s.get_empty_book());
+        snap("0_opening_saved");
+        s.invoke_open_opening();
+        assert_eq!(slint::Model::row_data(&s.get_open_rows(), 0).unwrap().amount.as_str(), "3000");
+        snap("0_opening_form");
+        s.invoke_edit_opening(0, "0".into());
+        s.invoke_edit_opening(4, "".into());
+        s.invoke_save_opening();
+        assert!(s.get_empty_book());
+        st.borrow_mut().undo = None;
+        s.invoke_reset_demo();
         assert_eq!(st.borrow().book.entries.len(), demo);
         s.set_tab(0);
         s.set_report(0);
