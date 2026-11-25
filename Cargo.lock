@@ -2169,7 +2169,7 @@ checksum = "20870f649af7073d53e38067b2a84312175d56ea15217e1b15bc83506ec50afb"
 
 [[package]]
 name = "ledger-core"
-version = "1.1.3"
+version = "1.2.0"
 dependencies = [
  "chrono",
  "serde",
@@ -2178,7 +2178,7 @@ dependencies = [
 
 [[package]]
 name = "ledger-desktop"
-version = "1.1.3"
+version = "1.2.0"
 dependencies = [
  "dirs",
  "ledger-core",
