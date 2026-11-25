@@ -119,14 +119,33 @@ pub fn f2(n: f64, dec: bool) -> String {
 /// Largest amount accepted (same limit as the Android app).
 pub const MAX_AMOUNT: f64 = 1e12;
 
-/// "1 250,50" / "1250.5" → 1250.5 ; anything else → 0.
+/// Reads what people type, whatever the separators:
+/// "1 250,50" · "1,250.50" · "1.250,50" · "1250.5" · "1,250" (= 1250) · "12,5" (= 12.5).
+/// Anything else, or more than [`MAX_AMOUNT`], gives 0.
 ///
-/// Digits and separators only: `f64::from_str` also understands "inf", "NaN"
-/// and "1e400", and JSON has no infinity — it would be saved as `null`.
+/// Same rules as `parseAmount` in the Flutter app, on the same cases
+/// (tests/fixtures/amounts.json). Digits and separators only: `f64::from_str`
+/// also understands "inf", "NaN" and "1e400", and JSON has no infinity.
 pub fn parse_amount(s: &str) -> f64 {
-    let t: String = s.chars().filter(|c| !c.is_whitespace()).collect::<String>().replace(',', ".");
-    if !t.chars().all(|c| c.is_ascii_digit() || c == '.') {
+    let mut t: String = s.chars().filter(|c| !c.is_whitespace()).collect();
+    if t.is_empty() || !t.chars().all(|c| c.is_ascii_digit() || c == '.' || c == ',') {
         return 0.0;
+    }
+    // "1,250" / "12,345,678": 1 to 3 digits, then groups of exactly 3.
+    let grouped = |t: &str, sep: char, min_groups: usize| {
+        let parts: Vec<&str> = t.split(sep).collect();
+        parts.len() > min_groups && (1..=3).contains(&parts[0].len()) && parts[1..].iter().all(|p| p.len() == 3)
+    };
+    match (t.rfind(','), t.rfind('.')) {
+        // Both used: the last one is the decimal mark, the other groups thousands.
+        (Some(c), Some(d)) => {
+            let (dec, group) = if c > d { (',', '.') } else { ('.', ',') };
+            t = t.replace(group, "").replace(dec, ".");
+        }
+        (Some(_), None) if grouped(&t, ',', 1) => t = t.replace(',', ""),
+        (Some(_), None) => t = t.replace(',', "."),
+        (None, Some(_)) if grouped(&t, '.', 2) => t = t.replace('.', ""),
+        _ => {}
     }
     match t.parse::<f64>() {
         Ok(v) if v.is_finite() && v <= MAX_AMOUNT => v,
@@ -153,6 +172,16 @@ mod tests {
             assert_eq!(parse_amount(junk), 0.0, "{junk}");
         }
         assert_eq!(parse_amount("1000000000000"), MAX_AMOUNT);
+    }
+
+    /// The same file is read by the Flutter tests.
+    #[test]
+    fn amounts_match_the_shared_cases() {
+        let cases: Vec<(String, f64)> = serde_json::from_str(include_str!("../tests/fixtures/amounts.json")).unwrap();
+        assert!(cases.len() > 25);
+        for (typed, expected) in cases {
+            assert_eq!(parse_amount(&typed), expected, "{typed:?}");
+        }
     }
 
     #[test]
