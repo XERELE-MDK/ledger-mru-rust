@@ -1,0 +1,32 @@
+name: Release
+on:
+  push:
+    tags: ['v*']
+permissions:
+  contents: write
+jobs:
+  packages:
+    runs-on: ubuntu-22.04
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+      - name: System libraries
+        run: sudo apt-get update && sudo apt-get install -y --no-install-recommends libfontconfig1-dev libxkbcommon-dev rpm
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: clippy
+      - uses: Swatinem/rust-cache@v2
+      - name: Version and notes
+        run: tools/release_notes.sh "$GITHUB_REF_NAME" > notes.md
+      - name: Tests
+        run: cargo test --locked -p ledger-core
+      - name: Packages (.deb, .rpm, .tar.gz)
+        run: packaging/build_packages.sh
+      - name: The packaged program runs
+        run: target/release/ledger-desktop --screenshots shots
+      - name: Publish
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release view "$GITHUB_REF_NAME" >/dev/null 2>&1 || gh release create "$GITHUB_REF_NAME" --title "Ledger MRU ${GITHUB_REF_NAME#v} (Rust)" --notes-file notes.md --verify-tag
+          gh release upload "$GITHUB_REF_NAME" dist/* --clobber

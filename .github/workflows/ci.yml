@@ -1,0 +1,36 @@
+name: CI
+on:
+  push:
+    branches: [main]
+  pull_request:
+permissions:
+  contents: read
+jobs:
+  test:
+    runs-on: ubuntu-22.04
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+      - name: System libraries
+        run: sudo apt-get update && sudo apt-get install -y --no-install-recommends libfontconfig1-dev libxkbcommon-dev rpm
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: clippy
+      - uses: Swatinem/rust-cache@v2
+      - name: Contract shared with the Flutter app
+        run: cd ledger-core/tests/fixtures && sha256sum -c CONTRACT.sha256
+      - name: Core tests
+        run: cargo test --locked -p ledger-core
+      - name: Lints (informative)
+        run: cargo clippy --locked -p ledger-core -p ledger-desktop
+      - name: Release build
+        run: cargo build --release --locked -p ledger-desktop
+      - name: Play the whole interface, offscreen
+        run: target/release/ledger-desktop --screenshots shots && ls shots | wc -l
+      - name: Screenshots as PNG
+        run: sudo apt-get install -y --no-install-recommends imagemagick && mogrify -format png shots/*.ppm
+      - uses: actions/upload-artifact@v4
+        with:
+          name: captures
+          path: shots/*.png
+          retention-days: 14
