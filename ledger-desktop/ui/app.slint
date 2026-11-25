@@ -48,6 +48,8 @@ export struct BudgetRow {
 export struct AcctRow { id: string, name: string, meta: string, bal: string }
 export struct AcctGroup { label: string, hint: string, items: [AcctRow] }
 
+export struct OpenRow { name: string, debt: bool, amount: string }
+
 export global Store {
     // navigation & settings
     in-out property <int> tab; // 0 home · 1 journal · 2 ledger · 3 reports · 4 accounts
@@ -113,7 +115,7 @@ export global Store {
     in-out property <bool> confirm-empty;
     in-out property <bool> demo-seen; // first-launch card dismissed
 
-    // overlays: 0 none · 1 new entry · 2 entry detail · 3 account editor
+    // overlays: 0 none · 1 new entry · 2 entry detail · 3 account editor · 4 opening balances
     in-out property <int> overlay;
 
     // new-entry form
@@ -146,6 +148,12 @@ export global Store {
     // stays until dismissed (e.g. the ledger file could not be read)
     in-out property <string> notice;
 
+    // opening balances
+    in property <bool> empty-book;
+    in property <[OpenRow]> open-rows;
+    in-out property <string> open-date;
+    in property <string> open-error;
+
     // toast
     in property <string> toast;
     in property <bool> toast-undo;
@@ -172,6 +180,9 @@ export global Store {
     callback delete-account();
     callback reset-demo();
     callback start-empty();
+    callback open-opening();
+    callback edit-opening(int, string);
+    callback save-opening();
     callback export-json();
     callback import-json(bool); // true = merge, false = replace
 
@@ -1519,6 +1530,10 @@ component AccountsView inherits HorizontalLayout {
             text: "+ New account";
             clicked => { Store.open-account(""); }
         }
+        PillButton {
+            text: "Opening balances";
+            clicked => { Store.open-opening(); }
+        }
     }
 }
 
@@ -1750,6 +1765,70 @@ component EntryDetail inherits VerticalLayout {
     }
 }
 
+/// What you have and owe at the start, one amount per account.
+component OpeningForm inherits VerticalLayout {
+    padding: 30px;
+    spacing: 14px;
+    Heading {
+        text: "Opening balances";
+        font-size: 26px;
+    }
+    Muted {
+        text: "What you have, and what you owe, on that day. This is not income: the difference goes to “Opening balance”.";
+        wrap: word-wrap;
+    }
+    FieldLabel { text: "Date (YYYY-MM-DD)"; }
+    LineEdit { text <=> Store.open-date; }
+    ScrollView {
+        vertical-stretch: 1;
+        VerticalLayout {
+            spacing: 10px;
+            padding-right: 12px;
+            alignment: start;
+            for r[i] in Store.open-rows: HorizontalLayout {
+                spacing: 12px;
+                VerticalLayout {
+                    horizontal-stretch: 1;
+                    alignment: center;
+                    T {
+                        text: r.name;
+                        font-weight: 600;
+                        overflow: elide;
+                    }
+                    Muted { text: r.debt ? "What I owe" : "What I have"; }
+                }
+                LineEdit {
+                    width: 170px;
+                    text: r.amount;
+                    placeholder-text: "0";
+                    horizontal-alignment: right;
+                    edited(t) => { Store.edit-opening(i, t); }
+                    accepted => { Store.save-opening(); }
+                }
+            }
+        }
+    }
+    if Store.open-error != "": T {
+        text: Store.open-error;
+        color: P.a700;
+        font-weight: 600;
+        wrap: word-wrap;
+    }
+    HorizontalLayout {
+        spacing: 10px;
+        PillButton {
+            text: "Cancel";
+            clicked => { Store.close-overlay(); }
+        }
+        PillButton {
+            text: "Save";
+            primary: true;
+            horizontal-stretch: 1;
+            clicked => { Store.save-opening(); }
+        }
+    }
+}
+
 component AccountForm inherits VerticalLayout {
     padding: 30px;
     spacing: 12px;
@@ -1926,6 +2005,36 @@ export component AppWindow inherits Window {
                     }
                 }
             }
+            // Empty book: the first thing to write down.
+            if Store.notice == "" && Store.empty-book && Store.tab == 0: VerticalLayout {
+                padding-left: 30px;
+                padding-right: 30px;
+                padding-bottom: 14px;
+                Rectangle {
+                    background: P.g100;
+                    border-radius: 20px;
+                    HorizontalLayout {
+                        padding: 12px;
+                        padding-left: 20px;
+                        spacing: 12px;
+                        T {
+                            text: "Your book is empty. Start with what you have today.";
+                            color: P.g900;
+                            wrap: word-wrap;
+                            horizontal-stretch: 1;
+                        }
+                        VerticalLayout {
+                            alignment: center;
+                            PillButton {
+                                text: "Opening balances";
+                                primary: true;
+                                font-size: 14px;
+                                clicked => { Store.open-opening(); }
+                            }
+                        }
+                    }
+                }
+            }
             // First launch (not while sync is on: it would reach other devices).
             if Store.notice == "" && Store.only-demo && !Store.demo-seen && !Store.sync-on && Store.tab == 0: VerticalLayout {
                 padding-left: 30px;
@@ -1987,6 +2096,9 @@ export component AppWindow inherits Window {
     }
     if Store.overlay == 3: Drawer {
         AccountForm { }
+    }
+    if Store.overlay == 4: Drawer {
+        OpeningForm { }
     }
 
     if Store.toast != "": Rectangle {

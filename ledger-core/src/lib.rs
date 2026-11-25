@@ -177,6 +177,11 @@ pub fn is_demo_entry(id: &str) -> bool {
     matches!(id.strip_prefix('s').and_then(|r| r.split_once('-')), Some((day, n)) if day.len() == 8 && digits(day) && digits(n))
 }
 
+/// Was this entry made by [`Book::set_opening`] ("o1795…-3fa2")?
+pub fn is_opening_entry(id: &str) -> bool {
+    id.strip_prefix('o').and_then(|r| r.split_once('-')).is_some_and(|(ms, _)| ms.len() >= 12 && ms.bytes().all(|b| b.is_ascii_digit()))
+}
+
 /// How an entry reads in simple mode.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum Kind {
@@ -586,6 +591,79 @@ impl Book {
         ids.len()
     }
 
+    /// What each thing the user has, or owes, was at the start: assets and
+    /// liabilities, with the total already recorded by [`Book::set_opening`].
+    pub fn opening_rows(&self) -> Vec<(&Account, f64)> {
+        self.sorted_accounts()
+            .into_iter()
+            .filter(|a| matches!(a.kind, AccountType::Asset | AccountType::Liability))
+            .map(|a| {
+                let raw: f64 = self
+                    .entries
+                    .iter()
+                    .filter(|e| is_opening_entry(&e.id))
+                    .flat_map(|e| &e.lines)
+                    .filter(|l| l.a == a.id)
+                    .map(|l| l.dr - l.cr)
+                    .sum();
+                (a, Book::normal_bal(a, raw))
+            })
+            .collect()
+    }
+
+    /// Date of the recorded opening balances, if any.
+    pub fn opening_date(&self) -> Option<&str> {
+        self.entries.iter().filter(|e| is_opening_entry(&e.id)).map(|e| e.date.as_str()).min()
+    }
+
+    /// Records the opening balances as one balanced entry: what you have is
+    /// debited, what you owe is credited, the difference goes to equity.
+    /// Replaces the previous ones; all zeros removes them. Returns the new id.
+    pub fn set_opening(&mut self, date: &str, amounts: &[(String, String)], memo: &str) -> Result<Option<String>, String> {
+        if parse_date(date).is_none_or(|d| date_str(d) != date) {
+            return Err("Enter a date as YYYY-MM-DD.".into());
+        }
+        let mut lines = Vec::new();
+        for (id, text) in amounts {
+            let Some(a) = self.account(id).filter(|a| matches!(a.kind, AccountType::Asset | AccountType::Liability)) else { continue };
+            let v = parse_amount(text);
+            if v == 0.0 && text.chars().any(|c| !c.is_whitespace() && !matches!(c, '0' | '.' | ',')) {
+                return Err(format!("\"{}\": \"{}\" is not an amount.", a.name, text.trim()));
+            }
+            if v > 0.0 {
+                let (dr, cr) = if a.kind.debit_normal() { (v, 0.0) } else { (0.0, v) };
+                lines.push(Line { a: id.clone(), dr, cr });
+            }
+        }
+        let old: Vec<String> = self.entries.iter().filter(|e| is_opening_entry(&e.id)).map(|e| e.id.clone()).collect();
+        if lines.is_empty() && old.is_empty() {
+            return Err("Enter at least one amount.".into());
+        }
+        let diff = (lines.iter().map(|l| l.dr - l.cr).sum::<f64>() * 100.0).round() / 100.0;
+        if diff != 0.0 {
+            let a = self.opening_account();
+            lines.push(if diff > 0.0 { Line { a, dr: 0.0, cr: diff } } else { Line { a, dr: -diff, cr: 0.0 } });
+        }
+        for id in &old {
+            self.delete_entry(id);
+        }
+        if lines.is_empty() {
+            return Ok(None);
+        }
+        let id = format!("o{}", &new_entry_id()[1..]);
+        self.entries.push(Entry { id: id.clone(), date: date.into(), memo: memo.into(), lines });
+        Ok(Some(id))
+    }
+
+    /// The equity account that balances the opening; created when missing.
+    fn opening_account(&mut self) -> String {
+        let equity = |a: &&Account| a.kind == AccountType::Equity;
+        if let Some(a) = self.accounts.iter().find(|a| a.id == "opening" && equity(a)).or_else(|| self.accounts.iter().find(equity)) {
+            return a.id.clone();
+        }
+        self.save_account(None, "Opening balance", AccountType::Equity, "").expect("the name is not empty")
+    }
+
     /// Creates (id = None) or updates an account.
     pub fn save_account(&mut self, id: Option<&str>, name: &str, kind: AccountType, budget: &str) -> Result<String, String> {
         let name = name.trim();
@@ -987,6 +1065,48 @@ mod tests {
         y = en.clone();
         y.add_entry(&NewEntry { memo: "Two", ..f }, "e1".into()).unwrap();
         assert_eq!(x.merge(&y).1.conflicts, 1);
+    }
+
+    #[test]
+    fn opening_balances_balance_and_can_be_changed() {
+        let a = |v: &[(&str, &str)]| v.iter().map(|(i, t)| (i.to_string(), t.to_string())).collect::<Vec<_>>();
+        let mut b = demo();
+        b.remove_demo();
+        assert!(b.set_opening("2026-11-01", &a(&[("cash", ""), ("bank", " 0,00 ")]), "Opening").is_err());
+        assert!(b.set_opening("2026-11-01", &a(&[("cash", "abc")]), "Opening").unwrap_err().contains("Cash"));
+        assert!(b.set_opening("2026-13-45", &a(&[("cash", "5")]), "Opening").is_err());
+        assert!(b.set_opening("2026-1-015", &a(&[("cash", "5")]), "Opening").is_err());
+        assert!(b.entries.is_empty());
+
+        // Have 3 000 + 21 000.50, owe 2 000 → equity 22 000.50. Other accounts are ignored.
+        let id = b.set_opening("2026-11-01", &a(&[("cash", "3,000"), ("bank", "21 000,50"), ("loan", "2000"), ("food", "99"), ("nope", "7")]), "Opening").unwrap().unwrap();
+        assert!(is_opening_entry(&id) && !is_demo_entry(&id) && !is_opening_entry(&new_entry_id()) && !is_opening_entry("opening"));
+        assert!(b.entries.len() == 1 && b.entries[0].is_balanced());
+        assert_eq!((b.raw_bal("cash", "2026-11-31"), b.raw_bal("loan", "2026-11-31"), b.raw_bal("opening", "2026-11-31")), (3000.0, -2000.0, -22000.5));
+        assert_eq!(b.totals(&b.entries), Totals { inc: 0.0, exp: 0.0 }, "not income");
+        let rows: Vec<(String, f64)> = b.opening_rows().into_iter().map(|(a, v)| (a.id.clone(), v)).collect();
+        assert_eq!(rows, [("cash", 3000.0), ("bank", 21000.5), ("wallet", 0.0), ("savings", 0.0), ("loan", 2000.0)].map(|(i, v)| (i.to_string(), v)));
+        assert_eq!(b.opening_date(), Some("2026-11-01"));
+
+        // Changing replaces, everywhere; the user's own equity entries stay.
+        let phone = b.clone();
+        b.entries.push(Entry { id: "e1".into(), date: "2026-11-02".into(), memo: "Gift".into(), lines: vec![Line { a: "cash".into(), dr: 10.0, cr: 0.0 }, Line { a: "opening".into(), dr: 0.0, cr: 10.0 }] });
+        b.set_opening("2026-11-01", &a(&[("loan", "500")]), "Opening").unwrap();
+        assert_eq!((b.entries.len(), b.raw_bal("opening", "9999"), b.raw_bal("cash", "9999")), (2, 490.0, 10.0));
+        assert_eq!(phone.merge(&b).0.entries.len(), 2);
+        // Having exactly what you owe needs no equity line; all zeros removes it.
+        b.set_opening("2026-11-01", &a(&[("cash", "500"), ("loan", "500")]), "Opening").unwrap();
+        assert_eq!(b.entries.last().unwrap().lines.len(), 2);
+        assert_eq!(b.set_opening("2026-11-01", &a(&[("cash", "")]), "Opening"), Ok(None));
+        assert_eq!(b.entries.iter().map(|e| e.id.as_str()).collect::<Vec<_>>(), ["e1"]);
+        // Cents that do not add up in binary still balance.
+        b.set_opening("2026-11-01", &a(&[("cash", "0.1"), ("bank", "0.2"), ("loan", "0.3")]), "Opening").unwrap();
+        assert!(b.entries.last().unwrap().is_balanced() && b.entries.last().unwrap().lines.len() == 3);
+        // No equity account left: one is created.
+        b.entries.clear();
+        b.accounts.retain(|a| a.kind != AccountType::Equity);
+        b.set_opening("2026-11-01", &a(&[("cash", "5")]), "Opening").unwrap();
+        assert!(Book::from_json(&b.to_json()).unwrap().accounts.iter().any(|a| a.kind == AccountType::Equity));
     }
 
     #[test]
