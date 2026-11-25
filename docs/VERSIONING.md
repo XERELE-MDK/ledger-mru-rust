@@ -1,35 +1,35 @@
-# Gestion des versions
+# Versioning
 
-[← Documentation](README.md) · [Journal des versions](../CHANGELOG.md)
+[← Documentation](README.md) · [Changelog](../CHANGELOG.md)
 
-## Numéros
+## Numbers
 
-[SemVer](https://semver.org/lang/fr/) : `MAJEUR.MINEUR.CORRECTIF`.
+[SemVer](https://semver.org/): `MAJOR.MINOR.PATCH`.
 
-| Changement | On augmente |
+| Change | Bump |
 |---|---|
-| le format JSON n'est plus lisible par les anciennes versions | MAJEUR |
-| nouvelle fonctionnalité | MINEUR |
-| correction | CORRECTIF |
+| the JSON format can no longer be read by older versions | MAJOR |
+| new feature | MINOR |
+| fix | PATCH |
 
-Les trois dépôts avancent avec **le même numéro**. Une version peut n'apporter que « aucun changement » dans l'un d'eux.
+The three repositories move forward with **the same number**. A release may bring "no change" to one of them.
 
-## Branches et commits
+## Branches and commits
 
-- `main` est toujours publiable : la CI doit y être verte.
-- Une branche par sujet : `feat/…`, `fix/…`, `docs/…`, fusionnée sans avance rapide.
-- Messages : [Conventional Commits](https://www.conventionalcommits.org/fr/) (`feat(opening): …`, `fix(sync): …`).
+- `main` is always releasable: CI must be green on it.
+- One branch per topic: `feat/…`, `fix/…`, `docs/…`, merged without fast-forward.
+- Messages: [Conventional Commits](https://www.conventionalcommits.org/) (`feat(opening): …`, `fix(sync): …`).
 
-## Publier une version
+## Cutting a release
 
-1. Changer le numéro dans `Cargo.toml` et la dépendance `ledger-core` de `ledger-desktop/Cargo.toml`.
-2. Écrire la section `## [X.Y.Z] — date` de `CHANGELOG.md`.
-3. Vérifier : `tools/release_notes.sh X.Y.Z` (échoue si les numéros ne concordent pas).
-4. Commit, puis étiquette : `git tag -a vX.Y.Z -m "Ledger MRU X.Y.Z"` et `git push --follow-tags`.
-5. La CI compile et publie `.deb`, `.rpm`, `.tar.gz`. Le paquet Arch est ajouté depuis une machine Arch.
+1. Bump the number in `Cargo.toml` and in the `ledger-core` dependency of `ledger-desktop/Cargo.toml`.
+2. Write the `## [X.Y.Z] — date` section of `CHANGELOG.md`.
+3. Check: `tools/release_notes.sh X.Y.Z` (fails if the numbers do not match).
+4. Commit, then tag: `git tag -a vX.Y.Z -m "Ledger MRU X.Y.Z"` and `git push --follow-tags`.
+5. CI builds and publishes `.deb`, `.rpm`, `.tar.gz`. The Arch package is added from an Arch machine.
 
-Ordre entre dépôts : **flutter**, puis **mobile** (qui pointe dessus), **rust** à part.
+Order across repositories: **flutter**, then **mobile** (which points to it), **rust** on its own.
 
-## Le contrat entre Dart et Rust
+## The contract between Dart and Rust
 
-Les deux logiques lisent les **mêmes fichiers de test** (`amounts.json`, `merge_*.json`). Leurs empreintes sont dans `CONTRACT.sha256`, identique dans les dépôts rust et flutter, et vérifiée par la CI. Corriger une règle d'un côté = ajouter un cas à ces fichiers, des deux côtés.
+Both logics read **the same test files** (`amounts.json`, `merge_*.json`). Their hashes are in `CONTRACT.sha256`, identical in the rust and flutter repositories and checked by CI. Fixing a rule on one side = adding a case to these files, on both sides.

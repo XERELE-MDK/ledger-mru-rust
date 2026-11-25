@@ -1,7 +1,7 @@
-# Import et export — parcours du code
+# Import and export — code walkthrough
 
-[← Toutes les fonctionnalités](../README.md) · [Fonctionnement](FUNCTIONALITY.md)
+[← All features](../README.md) · [How it works](FUNCTIONALITY.md)
 
 - `on_export_json`, `on_import_json` (`src/main.rs`).
-- `Book::from_json` vérifie avant d'appliquer ; `Undo::Book` garde l'ancien livre.
-- Clés inconnues (réglages propres au téléphone) : ignorées, et non réécrites.
+- `Book::from_json` checks before applying; `Undo::Book` keeps the previous book.
+- Unknown keys (phone-only settings) are ignored, and not written back.

@@ -1,3 +1,15 @@
 /target
 /dist/
 *.ppm
+
+# Editors, OS, logs
+.idea/
+.vscode/*
+!.vscode/extensions.json
+*.swp
+.DS_Store
+*.log
+/shots/
+
+# French docs: local only, they live in the Obsidian vault (symlink)
+/docs-fr

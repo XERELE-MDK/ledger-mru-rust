@@ -1,10 +1,10 @@
-# Import et export — fonctionnement
+# Import and export — how it works
 
-[← Toutes les fonctionnalités](../README.md) · [Parcours du code](CODE_WALKTHROUGH.md)
+[← All features](../README.md) · [Code walkthrough](CODE_WALKTHROUGH.md)
 
-*Accounts → Data* : le chemin se tape.
+*Accounts → Data*: the path is typed.
 
-- **Merge** garde les deux côtés, suppressions comprises.
-- **Replace** prend le fichier tel quel ; refusé pendant la synchro.
+- **Merge** keeps both sides, deletions included.
+- **Replace** takes the file as it is; refused while sync is on.
 
-Undo est proposé. Limite connue : annuler une fusion ne tient pas si la synchro est active.
+Undo is offered. Known limit: undoing a merge does not hold while sync is on.
